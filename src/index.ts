@@ -1,21 +1,29 @@
 import joplin from 'api';
-
-const histNoteId = 'acd86f64f8004625b7dd71284b39ba11';
-const minSecBetweenItems = 60;
-const maxHistDays = 90;
+import { SettingItemType, ToolbarButtonLocation } from 'api/types';
 
 async function addHistItem(noteId: string){
-  const note = await joplin.data.get(['notes', noteId], { fields: ['id', 'title'] });
-  const date = new Date();
-  const newItem = date.toISOString() + ' [' + note.title + '](:/' + note.id + ')\n';
+  // settings
+  const histNoteId = await joplin.settings.value('histNoteId') as string;
+  const minSecBetweenItems = await joplin.settings.value('minSecBetweenItems') as number;
+  const maxHistDays = await joplin.settings.value('maxHistDays') as number;
+
+  if ((noteId == undefined) || (noteId == histNoteId)) return;
   const histNote = await joplin.data.get(['notes', histNoteId], { fields: ['id', 'title', 'body'] });
+  if (histNote == undefined) {
+    console.log('failed because histNote = ' + histNote);
+    return;
+  }
   const lastItemDate = new Date(histNote.body.slice(0, 24));
+  const date = new Date();
 
   if (date.getTime() - lastItemDate.getTime() < 1000*minSecBetweenItems)
     return
 
   if (maxHistDays > 0)
     histNote.body = await cleanOldHist(histNote.body, maxHistDays);
+
+  const note = await joplin.data.get(['notes', noteId], { fields: ['id', 'title'] });
+  const newItem = date.toISOString() + ' [' + note.title + '](:/' + note.id + ')\n';
   await joplin.data.put(['notes', histNote.id], null, { body: newItem + histNote.body});
 
   const finish = new Date();
@@ -37,12 +45,41 @@ async function cleanOldHist(body: string, maxHistDays: number): Promise<string> 
 
 joplin.plugins.register({
 	onStart: async function() {
+    await joplin.settings.registerSection('HistoryPanel', {
+			label: 'History Panel',
+			iconName: 'fas fa-history',
+		});
+
+		await joplin.settings.registerSettings({
+			'histNoteId': {
+				value: '',
+				type: SettingItemType.String,
+				section: 'HistoryPanel',
+				public: true,
+				label: 'History note ID',
+			},
+
+			'minSecBetweenItems': {
+				value: 60,
+				type: SettingItemType.Int,
+				section: 'HistoryPanel',
+				public: true,
+				label: 'Min seconds between history items',
+			},
+
+			'maxHistDays': {
+				value: 90,
+				type: SettingItemType.Int,
+				section: 'HistoryPanel',
+				public: true,
+				label: 'Days of history to store',
+			},
+		});
+
 		await joplin.workspace.onNoteSelectionChange(
       async ({ value }: { value: [string?] }
     ) => {
-      if (histNoteId == undefined) return;
       const noteId = value?.[0] as string;
-      if ((noteId == undefined) || (noteId == histNoteId)) return;
       addHistItem(noteId);
 		});
 	},
