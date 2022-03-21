@@ -1,5 +1,5 @@
 import joplin from 'api';
-import { SettingItemType, ToolbarButtonLocation } from 'api/types';
+import { SettingItemType, MenuItemLocation, ToolbarButtonLocation } from 'api/types';
 
 async function addHistItem(noteId: string){
   // settings
@@ -19,7 +19,7 @@ async function addHistItem(noteId: string){
   const lastItemDate = new Date(histNote.body.slice(0, 24));
   const date = new Date();
   if (date.getTime() - lastItemDate.getTime() < 1000*minSecBetweenItems)
-    return
+    return;
 
   if (maxHistDays > 0)
     histNote.body = await cleanOldHist(histNote.body, maxHistDays);
@@ -38,7 +38,7 @@ async function cleanOldHist(body: string, maxHistDays: number): Promise<string> 
   for (var i = lines.length - 1; i >= 0; i--) {
     const itemDate = new Date(lines[i].split(' ')[0]).getTime();
     if ((now - itemDate) <= maxHistDays*1000*60*60*24)
-      break
+      break;
   }
 
   console.log('deleted ' + (lines.length - i - 1) + ' history items.');
@@ -77,6 +77,18 @@ joplin.plugins.register({
 				label: 'Days of history to keep',
 			},
 		});
+
+    await joplin.commands.register({
+			name: 'setHistNote',
+			label: 'Set history note',
+			iconName: 'fas fa-history',
+			execute: async () => {
+        const note = await joplin.workspace.selectedNote();
+				await joplin.settings.setValue('histNoteId', note.id);
+			},
+		});
+
+    await joplin.views.menuItems.create('menuHistNote', 'setHistNote', MenuItemLocation.Tools);
 
 		await joplin.workspace.onNoteSelectionChange(
       async ({ value }: { value: [string?] }
