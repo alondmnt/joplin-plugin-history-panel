@@ -18,7 +18,6 @@ async function addHistItem(noteId: string){
 
   const lastItemDate = new Date(histNote.body.slice(0, 24));
   const date = new Date();
-
   if (date.getTime() - lastItemDate.getTime() < 1000*minSecBetweenItems)
     return
 
@@ -75,7 +74,7 @@ joplin.plugins.register({
 				type: SettingItemType.Int,
 				section: 'HistoryPanel',
 				public: true,
-				label: 'Days of history to store',
+				label: 'Days of history to keep',
 			},
 		});
 
