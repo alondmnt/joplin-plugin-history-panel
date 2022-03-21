@@ -22,6 +22,7 @@ joplin.plugins.register({
     ) => {
       if (histNoteId == undefined) return;
       const noteId = value?.[0] as string;
+      if (histNoteId == noteId) return;
       addHistItem(noteId);
 		});
 	},
