@@ -9,7 +9,7 @@ async function addHistItem(noteId: string){
   const date = new Date();
   const newItem = date.toISOString() + ' [' + note.title + '](:/' + note.id + ')\n';
   const histNote = await joplin.data.get(['notes', histNoteId], { fields: ['id', 'title', 'body'] });
-  const lastItemDate = new Date(histNote.body.split(' ')[0]);
+  const lastItemDate = new Date(histNote.body.slice(0, 24));
 
   if (date.getTime() - lastItemDate.getTime() < 1000*minSecBetweenItems)
     return
