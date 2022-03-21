@@ -8,11 +8,14 @@ async function addHistItem(noteId: string){
   const maxHistDays = await joplin.settings.value('maxHistDays') as number;
 
   if ((noteId == undefined) || (noteId == histNoteId)) return;
-  const histNote = await joplin.data.get(['notes', histNoteId], { fields: ['id', 'title', 'body'] });
-  if (histNote == undefined) {
-    console.log('failed because histNote = ' + histNote);
-    return;
+  let histNote;
+  try {
+    histNote = await joplin.data.get(['notes', histNoteId], { fields: ['id', 'title', 'body'] });
+  } catch {
+    console.log('failed when histNoteId = ' + histNoteId);
+    return
   }
+
   const lastItemDate = new Date(histNote.body.slice(0, 24));
   const date = new Date();
 
