@@ -16,13 +16,12 @@ async function addHistItem(noteId: string){
     return
   }
 
-  const lastItemDate = new Date(histNote.body.slice(0, 24));
   const date = new Date();
-  if (date.getTime() - lastItemDate.getTime() < 1000*minSecBetweenItems)
-    return;
+  if (minSecBetweenItems > 0)
+    histNote.body = await cleanNewHist(histNote.body, date, minSecBetweenItems);
 
   if (maxHistDays > 0)
-    histNote.body = await cleanOldHist(histNote.body, maxHistDays);
+    histNote.body = await cleanOldHist(histNote.body, date, maxHistDays);
 
   const note = await joplin.data.get(['notes', noteId], { fields: ['id', 'title'] });
   const newItem = date.toISOString() + ' [' + note.title + '](:/' + note.id + ')\n';
@@ -32,12 +31,21 @@ async function addHistItem(noteId: string){
   console.log('took ' + (finish.getTime() - date.getTime()) + 'ms.')
 }
 
-async function cleanOldHist(body: string, maxHistDays: number): Promise<string> {
-  const now = new Date().getTime();
+async function cleanNewHist(body: string, newItemDate: Date, minSecBetweenItems: number): Promise<string> {
+  const lastItemDate = new Date(body.slice(0, 24));
+  if (newItemDate.getTime() - lastItemDate.getTime() >= 1000*minSecBetweenItems)
+    return body;
+  // remove last item from history
+  console.log('first history item removed')
+  const ind = body.search('\n')
+  return body.slice(ind+1)
+  }
+
+async function cleanOldHist(body: string, newItemDate: Date, maxHistDays: number): Promise<string> {
   const lines = body.split('\n');
   for (var i = lines.length - 1; i >= 0; i--) {
     const itemDate = new Date(lines[i].split(' ')[0]).getTime();
-    if ((now - itemDate) <= maxHistDays*1000*60*60*24)
+    if ((newItemDate.getTime() - itemDate) <= maxHistDays*1000*60*60*24)
       break;
   }
 
