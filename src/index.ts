@@ -70,7 +70,7 @@ joplin.plugins.register({
 			},
 
 			'minSecBetweenItems': {
-				value: 60,
+				value: 0,
 				type: SettingItemType.Int,
 				section: 'HistoryPanel',
 				public: true,
