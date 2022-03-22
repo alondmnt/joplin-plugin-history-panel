@@ -26,8 +26,8 @@ export default async function addHistItem(noteId: string){
   const newItem = date.toISOString() + ' [' + note.title + '](:/' + note.id + ')\n';
   await joplin.data.put(['notes', histNote.id], null, { body: newItem + histNote.body});
 
-  const finish = new Date();
-  console.log('took ' + (finish.getTime() - date.getTime()) + 'ms.')
+  // const finish = new Date();
+  // console.log('took ' + (finish.getTime() - date.getTime()) + 'ms.')
 }
 
 async function cleanNewHist(body: string, newItemDate: Date, minSecBetweenItems: number): Promise<string> {
@@ -35,7 +35,6 @@ async function cleanNewHist(body: string, newItemDate: Date, minSecBetweenItems:
   if (newItemDate.getTime() - lastItemDate.getTime() >= 1000*minSecBetweenItems)
     return body;
   // remove last item from history
-  console.log('first history item removed')
   const ind = body.search('\n')
   return body.slice(ind+1)
 }
@@ -47,7 +46,5 @@ async function cleanOldHist(body: string, newItemDate: Date, maxHistDays: number
     if ((newItemDate.getTime() - itemDate) <= maxHistDays*1000*60*60*24)
       break;
   }
-
-  console.log('deleted ' + (lines.length - i - 1) + ' history items.');
   return lines.slice(0, i+1).join('\n');
 }
