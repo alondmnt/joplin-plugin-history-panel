@@ -1,9 +1,11 @@
 import joplin from 'api';
 
-export default async function addHistItem(noteId: string){
+export default async function addHistItem(){
   // settings
+  const note = await joplin.workspace.selectedNote();
+  if (note == undefined) return;
   const histNoteId = await joplin.settings.value('histNoteId') as string;
-  if ((noteId == undefined) || (noteId == histNoteId)) return;
+  if (note.id == histNoteId) return;
 
   let histNote;
   try {
@@ -13,8 +15,8 @@ export default async function addHistItem(noteId: string){
     return
   }
 
-  const minSecBetweenItems = await joplin.settings.value('minSecBetweenItems') as number;
   const date = new Date();
+  const minSecBetweenItems = await joplin.settings.value('minSecBetweenItems') as number;
   if (minSecBetweenItems > 0)
     histNote.body = await cleanNewHist(histNote.body, date, minSecBetweenItems);
 
@@ -22,7 +24,6 @@ export default async function addHistItem(noteId: string){
   if (maxHistDays > 0)
     histNote.body = await cleanOldHist(histNote.body, date, maxHistDays);
 
-  const note = await joplin.data.get(['notes', noteId], { fields: ['id', 'title'] });
   const newItem = date.toISOString() + ' [' + note.title + '](:/' + note.id + ')\n';
   await joplin.data.put(['notes', histNote.id], null, { body: newItem + histNote.body});
 

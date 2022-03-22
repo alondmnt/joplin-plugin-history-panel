@@ -47,11 +47,8 @@ joplin.plugins.register({
 
     await joplin.views.menuItems.create('menuHistNote', 'setHistNote', MenuItemLocation.Tools);
 
-		await joplin.workspace.onNoteSelectionChange(
-      async ({ value }: { value: [string?] }
-    ) => {
-      const noteId = value?.[0] as string;
-      addHistItem(noteId);
+		await joplin.workspace.onNoteSelectionChange(() => {
+      addHistItem();
 		});
 	},
 });
