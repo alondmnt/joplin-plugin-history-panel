@@ -7,6 +7,7 @@ joplin.plugins.register({
 	onStart: async function() {
     const panel = await joplin.views.panels.create('history');
     await joplin.views.panels.addScript(panel, './webview.css');
+    await joplin.views.panels.addScript(panel, './webview.js');
     await joplin.views.panels.setHtml(panel, 'Loading...');
 
     await joplin.settings.registerSection('HistoryPanel', {
@@ -55,6 +56,12 @@ joplin.plugins.register({
 		await joplin.workspace.onNoteSelectionChange(async () => {
       await addHistItem();
       updateHistView(panel);
+		});
+
+		await joplin.views.panels.onMessage(panel, (message) => {
+			if (message.name === 'openHistory') {
+				joplin.commands.execute('openNote', message.hash)
+			}
 		});
 
     updateHistView(panel);
