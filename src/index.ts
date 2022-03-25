@@ -1,5 +1,5 @@
 import joplin from 'api';
-import { SettingItemType, MenuItemLocation } from 'api/types';
+import { SettingItemType, MenuItemLocation, ToolbarButtonLocation } from 'api/types';
 import addHistItem from './history';
 import updateHistView from './panel'
 
@@ -12,7 +12,7 @@ joplin.plugins.register({
 
     await joplin.settings.registerSection('HistoryPanel', {
 			label: 'History Panel',
-			iconName: 'fas fa-hourglass',
+			iconName: 'far fa-hourglass',
 		});
 
 		await joplin.settings.registerSettings({
@@ -44,7 +44,7 @@ joplin.plugins.register({
     await joplin.commands.register({
 			name: 'setHistNote',
 			label: 'Set history note',
-			iconName: 'fas fa-hourglass',
+			iconName: 'far fa-hourglass',
 			execute: async () => {
         const note = await joplin.workspace.selectedNote();
 				await joplin.settings.setValue('histNoteId', note.id);
@@ -52,6 +52,22 @@ joplin.plugins.register({
 		});
 
     await joplin.views.menuItems.create('menuHistNote', 'setHistNote', MenuItemLocation.Tools);
+
+    await joplin.commands.register({
+			name: 'toggleHistPanel',
+			label: 'Toggle history panel',
+			iconName: 'far fa-hourglass',
+			execute: async () => {
+        const vis = await joplin.views.panels.visible(panel)
+        if (vis)
+          joplin.views.panels.hide(panel);
+        else
+          joplin.views.panels.show(panel);
+			},
+		});
+
+    await joplin.views.menuItems.create('menuHistPanel', 'toggleHistPanel', MenuItemLocation.View);
+    await joplin.views.toolbarButtons.create('butHistPanel', 'toggleHistPanel', ToolbarButtonLocation.NoteToolbar);
 
 		await joplin.workspace.onNoteSelectionChange(async () => {
       await addHistItem();
