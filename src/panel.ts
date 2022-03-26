@@ -11,7 +11,7 @@ async function histLinks(histNoteId:string): Promise<string> {
 
   const itemHtml = [];
   let foldTag: string;
-  const dateScope = new Set('');
+  const dateScope = new Set(['today']);
   for (const line of histNote.body.split('\n')) {
     const noteTitle = line.match(/\[(.*?)\]/g)[0].slice(1, -1);
     const noteId = line.match(/\((.*?)\)/g)[0].slice(3, -1);
@@ -26,19 +26,20 @@ async function histLinks(histNoteId:string): Promise<string> {
 						</p>
 					`);
   }
+  console.log(dateScope)
   return itemHtml.join('\n');
 }
 
 function getFoldTag(now: Date, noteDate: Date, dateScope: Set<string>): string {
   /* whenever we pass a threshold, we need to close the previous folding section
      and start a new one */
-  if ((!dateScope.has('today')) && (now.getDay() - noteDate.getDay() == 1)) {
-    dateScope.add('today');
+  const dayDiff = getDateDay(now) - getDateDay(noteDate);
+  if (!dateScope.has('yesterday') && (dayDiff == 1)) {
+    dateScope.add('yesterday');
     return '</details><details><summary>Yesterday</summary>';
   }
-  if ((!dateScope.has('week')) &&
-      (now.getDay() - noteDate.getDay() > 1) &&
-      (getDateDay(now) - getDateDay(noteDate) <= 7)) {
+  if (!dateScope.has('week') &&
+      (dayDiff > 1) && (dayDiff <= 7)) {
     dateScope.add('week');
     return '</details><details><summary>Last 7 days</summary>';
   }
@@ -46,8 +47,7 @@ function getFoldTag(now: Date, noteDate: Date, dateScope: Set<string>): string {
   let strMonth = getMonthString(noteDate);
   if (strMonth == getMonthString(now))
     strMonth = 'This month';
-  if ((!dateScope.has(strMonth)) &&
-      (getDateDay(now) - getDateDay(noteDate) > 7)) {
+  if (!dateScope.has(strMonth) && (dayDiff > 7)) {
     dateScope.add(strMonth)
     return `</details><details><summary>${strMonth}</summary>`;
   }
