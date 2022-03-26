@@ -1,8 +1,5 @@
 html {
     overflow-y: auto;
-}
-
-.container {
 	background-color: var(--joplin-background-color);
 	color: var(--joplin-color);
 	font-size: var(--joplin-font-size);

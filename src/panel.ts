@@ -72,12 +72,17 @@ function escapeHtml(unsafe:string): string {
 
 export default async function updateHistView(panel:string) {
   const histNoteId = await joplin.settings.value('histNoteId') as string;
+  const userStyle = await joplin.settings.value('histUserStyle') as string;
 
   // First create the HTML for each history item:
   const itemHtml = await histLinks(histNoteId);
 
   // Finally, insert all the items in a container and set the webview HTML:
   await joplin.views.panels.setHtml(panel, `
+  <html>
+  <style>
+  ${userStyle}
+  </style>
   <div class="container">
     <h3>HISTORY</h3>
     <details open>

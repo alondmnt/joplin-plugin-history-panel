@@ -40,6 +40,14 @@ joplin.plugins.register({
 				label: 'Days of history to keep',
         description: 'Enter 0 for eternity'
 			},
+
+      'histUserStyle': {
+        value: '',
+        type: SettingItemType.String,
+        section: 'HistoryPanel',
+        public: true,
+        label: 'Panel stylesheet'
+      },
 		});
 
     await joplin.commands.register({
