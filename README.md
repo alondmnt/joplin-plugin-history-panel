@@ -1,24 +1,21 @@
-# Joplin Plugin
+# The History Panel (Joplin Plugin)
 
-This is a template to create a new Joplin plugin.
+Discussion: 
+## Installation
 
-The main two files you will want to look at are:
+1. Install the `History Panel` plugin from the Jolin app settings.
+2. Create a new designated note to keep your history logs, which will be formatted and displayed in the history panel.
+3. While this note is open, set your history note from the `Tools` menu --> `Set history note`.
+4. Set additional preferences in the `History Panel` settings dialog, such as the `Min seconds between history items` and the `Days of history to keep`.
 
-- `/src/index.ts`, which contains the entry point for the plugin source code.
-- `/src/manifest.json`, which is the plugin manifest. It contains information such as the plugin a name, version, etc.
+## Preview
 
-## Building the plugin
+![app preview](img/preview.jpg)
+## Use cases
 
-The plugin is built using Webpack, which creates the compiled code in `/dist`. A JPL archive will also be created at the root, which can use to distribute the plugin.
+The above setup enables some interesting use cases.
 
-To build the plugin, simply run `npm run dist`.
-
-The project is setup to use TypeScript, although you can change the configuration to use plain JavaScript.
-
-## Updating the plugin framework
-
-To update the plugin framework, run `npm run update`.
-
-In general this command tries to do the right thing - in particular it's going to merge the changes in package.json and .gitignore instead of overwriting. It will also leave "/src" as well as README.md untouched.
-
-The file that may cause problem is "webpack.config.js" because it's going to be overwritten. For that reason, if you want to change it, consider creating a separate JavaScript file and include it in webpack.config.js. That way, when you update, you only have to restore the line that include your file.
+- View your (desktop) history on mobile by opening the history note.
+- Sync and combine your history across devices.
+- Keep separate histories for work, different projects and so on, by maintaining multiples history notes and switching between them during app use.
+- Backlinks / referrers will point back to all the current note's visits that appear in any of the history logs.
