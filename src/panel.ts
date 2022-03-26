@@ -26,7 +26,6 @@ async function histLinks(histNoteId:string): Promise<string> {
 						</p>
 					`);
   }
-  console.log('html took: ' + (new Date().getTime() - now.getTime()) + ' ms')
   return itemHtml.join('\n');
 }
 
@@ -38,19 +37,19 @@ function getFoldTag(now: Date, noteDate: Date, dateScope: string): [string, stri
   }
   if ((!dateScope.includes('week')) &&
       (now.getDay() - noteDate.getDay() > 1) &&
-      (getYearDay(now) - getYearDay(noteDate) <= 7)) {
+      (getDateDay(now) - getDateDay(noteDate) <= 7)) {
     return ['</details><details><summary>Last 7 days</summary>', dateScope + 'week,'];
   }
   const strMonth = noteDate.toString().split(' ')[1] + ' ' + noteDate.toString().split(' ')[3]
   if ((!dateScope.includes(strMonth)) &&
-      (getYearDay(now) - getYearDay(noteDate) > 7)) {
+      (getDateDay(now) - getDateDay(noteDate) > 7)) {
     return [`</details><details><summary>${strMonth}</summary>`, dateScope + strMonth + ','];
   }
 
   return ['', dateScope];
 }
 
-function getYearDay(date: Date): number {
+function getDateDay(date: Date): number {
   return Math.ceil(date.getTime() / 86400000);
 }
 
