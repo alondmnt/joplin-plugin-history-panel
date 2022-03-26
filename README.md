@@ -18,4 +18,4 @@ The above setup enables some interesting use cases.
 - View your (desktop) history on mobile by opening the history note.
 - Sync and combine your history across devices.
 - Keep separate histories for work, different projects and so on, by maintaining multiples history notes and switching between them during app use.
-- Backlinks / referrers will point back to all the current note's visits that appear in any of the history logs.
+- [Backlinks / referrers](https://github.com/ylc395/joplin-plugin-note-link-system) will point back to all the visits of the currently viewed note that are documented in any of the history logs.
