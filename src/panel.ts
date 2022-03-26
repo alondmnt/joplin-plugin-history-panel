@@ -26,7 +26,6 @@ async function histLinks(histNoteId:string): Promise<string> {
             </p>
           `);
   }
-  console.log(dateScope)
   return itemHtml.join('\n');
 }
 
