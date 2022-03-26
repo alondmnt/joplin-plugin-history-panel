@@ -1,6 +1,6 @@
 # The History Panel (Joplin Plugin)
 
-Discussion: 
+Discussion: https://discourse.joplinapp.org/t/plugin-the-history-panel/24705
 ## Installation
 
 1. Install the `History Panel` plugin from the Jolin app settings.
