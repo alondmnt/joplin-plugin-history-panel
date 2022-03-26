@@ -19,12 +19,12 @@ async function histLinks(histNoteId:string): Promise<string> {
     foldTag = getFoldTag(now, noteDate, dateScope);
     itemHtml.push(`
             ${foldTag}
-						<p class="hist-item">
-							<a class="hist-item" href="#" data-slug="${noteId}">
-								${escapeHtml(noteTitle)}
-							</a>
-						</p>
-					`);
+            <p class="hist-item">
+              <a class="hist-item" href="#" data-slug="${noteId}">
+                ${escapeHtml(noteTitle)}
+              </a>
+            </p>
+          `);
   }
   console.log(dateScope)
   return itemHtml.join('\n');
