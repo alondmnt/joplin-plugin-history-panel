@@ -40,7 +40,10 @@ function getFoldTag(now: Date, noteDate: Date, dateScope: string): [string, stri
       (getDateDay(now) - getDateDay(noteDate) <= 7)) {
     return ['</details><details><summary>Last 7 days</summary>', dateScope + 'week,'];
   }
-  const strMonth = noteDate.toString().split(' ')[1] + ' ' + noteDate.toString().split(' ')[3]
+
+  let strMonth = getMonthString(noteDate);
+  if (strMonth == getMonthString(now))
+    strMonth = 'This month';
   if ((!dateScope.includes(strMonth)) &&
       (getDateDay(now) - getDateDay(noteDate) > 7)) {
     return [`</details><details><summary>${strMonth}</summary>`, dateScope + strMonth + ','];
@@ -51,6 +54,10 @@ function getFoldTag(now: Date, noteDate: Date, dateScope: string): [string, stri
 
 function getDateDay(date: Date): number {
   return Math.ceil(date.getTime() / 86400000);
+}
+
+function getMonthString(date: Date): string{
+  return date.toString().split(' ')[1] + ' ' + date.toString().split(' ')[3]
 }
 
 // From https://stackoverflow.com/a/6234804/561309
