@@ -38,6 +38,7 @@ joplin.plugins.register({
 				section: 'HistoryPanel',
 				public: true,
 				label: 'Days of history to keep',
+        description: 'Enter 0 for eternity'
 			},
 		});
 
