@@ -11,12 +11,12 @@ async function histLinks(histNoteId:string): Promise<string> {
 
   const itemHtml = [];
   let foldTag: string;
-  let dateScope = '';
+  const dateScope = new Set('');
   for (const line of histNote.body.split('\n')) {
     const noteTitle = line.match(/\[(.*?)\]/g)[0].slice(1, -1);
     const noteId = line.match(/\((.*?)\)/g)[0].slice(3, -1);
     const noteDate = new Date(line.split(' ')[0]);
-    [foldTag, dateScope] = getFoldTag(now, noteDate, dateScope);
+    foldTag = getFoldTag(now, noteDate, dateScope);
     itemHtml.push(`
             ${foldTag}
 						<p class="hist-item">
@@ -29,27 +29,30 @@ async function histLinks(histNoteId:string): Promise<string> {
   return itemHtml.join('\n');
 }
 
-function getFoldTag(now: Date, noteDate: Date, dateScope: string): [string, string] {
+function getFoldTag(now: Date, noteDate: Date, dateScope: Set<string>): string {
   /* whenever we pass a threshold, we need to close the previous folding section
      and start a new one */
-  if ((!dateScope.includes('today')) && (now.getDay() - noteDate.getDay() == 1)) {
-    return ['</details><details><summary>Yesterday</summary>', dateScope + 'today,'];
+  if ((!dateScope.has('today')) && (now.getDay() - noteDate.getDay() == 1)) {
+    dateScope.add('today');
+    return '</details><details><summary>Yesterday</summary>';
   }
-  if ((!dateScope.includes('week')) &&
+  if ((!dateScope.has('week')) &&
       (now.getDay() - noteDate.getDay() > 1) &&
       (getDateDay(now) - getDateDay(noteDate) <= 7)) {
-    return ['</details><details><summary>Last 7 days</summary>', dateScope + 'week,'];
+    dateScope.add('week');
+    return '</details><details><summary>Last 7 days</summary>';
   }
 
   let strMonth = getMonthString(noteDate);
   if (strMonth == getMonthString(now))
     strMonth = 'This month';
-  if ((!dateScope.includes(strMonth)) &&
+  if ((!dateScope.has(strMonth)) &&
       (getDateDay(now) - getDateDay(noteDate) > 7)) {
-    return [`</details><details><summary>${strMonth}</summary>`, dateScope + strMonth + ','];
+    dateScope.add(strMonth)
+    return `</details><details><summary>${strMonth}</summary>`;
   }
 
-  return ['', dateScope];
+  return '';
 }
 
 function getDateDay(date: Date): number {
