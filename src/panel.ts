@@ -55,11 +55,11 @@ function getFoldTag(now: Date, noteDate: Date, dateScope: Set<string>): string {
 }
 
 function getDateDay(date: Date): number {
-  return Math.ceil(date.getTime() / 86400000);
+  return Math.ceil((date.getTime() - 1000*60*date.getTimezoneOffset()) / 86400000);
 }
 
 function getMonthString(date: Date): string{
-  return date.toString().split(' ')[1] + ' ' + date.toString().split(' ')[3]
+  return date.toUTCString().split(' ')[2] + ' ' + date.toString().split(' ')[3]
 }
 
 // From https://stackoverflow.com/a/6234804/561309
