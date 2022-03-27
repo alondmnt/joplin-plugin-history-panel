@@ -41,12 +41,29 @@ joplin.plugins.register({
         description: 'Enter 0 for eternity'
 			},
 
+			'histPanelTitle': {
+				value: 'HISTORY',
+				type: SettingItemType.String,
+				section: 'HistoryPanel',
+				public: true,
+				label: 'Panel title',
+			},
+
+			'histPanelFontSize': {
+				value: 11,
+				type: SettingItemType.Int,
+				section: 'HistoryPanel',
+				public: true,
+				label: 'Panel title font size',
+			},
+
       'histUserStyle': {
         value: '',
         type: SettingItemType.String,
         section: 'HistoryPanel',
         public: true,
-        label: 'Panel stylesheet'
+        label: 'Panel stylesheet',
+        description: 'Classes include "hist-section" and "hist-item"'
       },
 		});
 

@@ -1,9 +1,10 @@
 html {
-    overflow-y: auto;
+  overflow-y: auto;
 	background-color: var(--joplin-background-color);
 	color: var(--joplin-color);
 	font-size: var(--joplin-font-size);
 	font-family: var(--joplin-font-family);
+	padding: 5px;
 }
 
 .hist-item a {
@@ -13,4 +14,8 @@ html {
 
 .hist-item a:active, a:hover {
 	font-weight: bold;
+}
+
+.hist-section {
+  font-weight: bold;
 }

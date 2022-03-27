@@ -35,12 +35,12 @@ function getFoldTag(now: Date, noteDate: Date, dateScope: Set<string>): string {
   const dayDiff = getDateDay(now) - getDateDay(noteDate);
   if (!dateScope.has('yesterday') && (dayDiff == 1)) {
     dateScope.add('yesterday');
-    return '</details><details><summary>Yesterday</summary>';
+    return '</details><details><summary class="hist-section">Yesterday</summary>';
   }
   if (!dateScope.has('week') &&
       (dayDiff > 1) && (dayDiff <= 7)) {
     dateScope.add('week');
-    return '</details><details><summary>Last 7 days</summary>';
+    return '</details><details><summary class="hist-section">Last 7 days</summary>';
   }
 
   let strMonth = getMonthString(noteDate);
@@ -48,7 +48,7 @@ function getFoldTag(now: Date, noteDate: Date, dateScope: Set<string>): string {
     strMonth = 'This month';
   if (!dateScope.has(strMonth) && (dayDiff > 7)) {
     dateScope.add(strMonth)
-    return `</details><details><summary>${strMonth}</summary>`;
+    return `</details><details><summary class="hist-section">${strMonth}</summary>`;
   }
 
   return '';
@@ -75,6 +75,8 @@ function escapeHtml(unsafe:string): string {
 export default async function updateHistView(panel:string) {
   // const start = new Date().getTime();
   const histNoteId = await joplin.settings.value('histNoteId') as string;
+  const userTitle = await joplin.settings.value('histPanelTitle') as string;
+  const userFontsize = await joplin.settings.value('histPanelFontSize') as number;
   const userStyle = await joplin.settings.value('histUserStyle') as string;
 
   // First create the HTML for each history item:
@@ -87,9 +89,9 @@ export default async function updateHistView(panel:string) {
   ${userStyle}
   </style>
   <div class="container">
-    <h3>HISTORY</h3>
+    <p style="font-size:${userFontsize}pt; font-weight:bold">${userTitle}</p>
     <details open>
-    <summary>Today</summary>
+    <summary class="hist-section">Today</summary>
     ${itemHtml}
     </details>
   </div>
