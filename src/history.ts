@@ -3,6 +3,8 @@ import joplin from 'api';
 export default async function addHistItem(){
   // settings
   const note = await joplin.workspace.selectedNote();
+  if (note.title == '')
+    note.title = 'Untitled';
   if (note == undefined) return;
   const histNoteId = await joplin.settings.value('histNoteId') as string;
   if (note.id == histNoteId) return;
