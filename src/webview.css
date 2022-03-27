@@ -15,7 +15,3 @@ html {
 .hist-item a:active, a:hover {
 	font-weight: bold;
 }
-
-.hist-section {
-  font-weight: bold;
-}
