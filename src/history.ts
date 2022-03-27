@@ -18,22 +18,35 @@ export default async function addHistItem(){
   }
 
   const date = new Date();
+  if (isDuplicate(histNote, note, date))  // do not duplicate the last item
+    return
+
   const minSecBetweenItems = await joplin.settings.value('minSecBetweenItems') as number;
   if (minSecBetweenItems > 0)
-    histNote.body = await cleanNewHist(histNote.body, date, minSecBetweenItems);
+    histNote.body = cleanNewHist(histNote.body, date, minSecBetweenItems);
 
   const maxHistDays = await joplin.settings.value('maxHistDays') as number;
   if (maxHistDays > 0)
-    histNote.body = await cleanOldHist(histNote.body, date, maxHistDays);
+    histNote.body = cleanOldHist(histNote.body, date, maxHistDays);
 
-  const newItem = date.toISOString() + ' [' + note.title + '](:/' + note.id + ')\n';
+  let newItem = date.toISOString() + ' [' + note.title + '](:/' + note.id + ')\n';
+  if (isDuplicate(histNote, note, date))  // do not duplicate the last item
+    newItem = '';
+
   await joplin.data.put(['notes', histNote.id], null, { body: newItem + histNote.body});
 
   // const finish = new Date();
   // console.log('took ' + (finish.getTime() - date.getTime()) + 'ms.')
 }
 
-async function cleanNewHist(body: string, newItemDate: Date, minSecBetweenItems: number): Promise<string> {
+function isDuplicate(histNote: any, note: any, date: Date): boolean {
+  const ind = histNote.body.search('\n');
+  const lastItemId = histNote.body.slice(0,ind).match(/\((.*?)\)/g)[0].slice(3, -1);
+  const lastItemDate = new Date(histNote.body.slice(0, 24)).getDate();
+  return (lastItemId == note.id) && (lastItemDate == date.getDate())
+}
+
+function cleanNewHist(body: string, newItemDate: Date, minSecBetweenItems: number): string {
   const lastItemDate = new Date(body.slice(0, 24));
   if (newItemDate.getTime() - lastItemDate.getTime() >= 1000*minSecBetweenItems)
     return body;
@@ -42,7 +55,7 @@ async function cleanNewHist(body: string, newItemDate: Date, minSecBetweenItems:
   return body.slice(ind+1)
 }
 
-async function cleanOldHist(body: string, newItemDate: Date, maxHistDays: number): Promise<string> {
+function cleanOldHist(body: string, newItemDate: Date, maxHistDays: number): string {
   const lines = body.split('\n');
   for (var i = lines.length - 1; i >= 0; i--) {
     const itemDate = new Date(lines[i].split(' ')[0]).getTime();
