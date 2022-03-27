@@ -70,8 +70,10 @@ joplin.plugins.register({
         const vis = await joplin.views.panels.visible(panel)
         if (vis)
           joplin.views.panels.hide(panel);
-        else
+        else{
+          updateHistView(panel);
           joplin.views.panels.show(panel);
+        }
 			},
 		});
 
@@ -80,7 +82,9 @@ joplin.plugins.register({
 
 		await joplin.workspace.onNoteSelectionChange(async () => {
       await addHistItem();
-      updateHistView(panel);
+      const vis = await joplin.views.panels.visible(panel)
+      if (vis)
+        updateHistView(panel);
 		});
 
 		await joplin.views.panels.onMessage(panel, (message) => {

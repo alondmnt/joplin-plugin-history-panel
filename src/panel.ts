@@ -73,6 +73,7 @@ function escapeHtml(unsafe:string): string {
 }
 
 export default async function updateHistView(panel:string) {
+  // const start = new Date().getTime();
   const histNoteId = await joplin.settings.value('histNoteId') as string;
   const userStyle = await joplin.settings.value('histUserStyle') as string;
 
@@ -93,4 +94,6 @@ export default async function updateHistView(panel:string) {
     </details>
   </div>
   `);
+  // const finish = new Date().getTime();
+  // console.log('updateHistView: ' + (finish-start) + 'ms')
 }
