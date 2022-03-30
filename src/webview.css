@@ -1,17 +1,31 @@
 html {
-  overflow-y: auto;
-    background-color: var(--joplin-background-color);
-    color: var(--joplin-color);
-    font-size: var(--joplin-font-size);
-    font-family: var(--joplin-font-family);
-    padding: 5px;
+  overflow: auto;
+  background-color: var(--joplin-background-color);
+  color: var(--joplin-color);
+  font-size: var(--joplin-font-size);
+  font-family: var(--joplin-font-family);
+}
+
+.hist-title {
+  color: var(--joplin-color);
+  font-weight: bold;
+  text-decoration: none;
+  margin: 5px;
+}
+
+.hist-section {
+  margin: 5px;
+}
+
+.hist-item {
+  margin: 5px;
 }
 
 .hist-item a {
-    color: var(--joplin-color);
-    text-decoration: none;
+  color: var(--joplin-color);
+  text-decoration: none;
 }
 
 .hist-item a:active, a:hover {
-    font-weight: bold;
+  font-weight: bold;
 }

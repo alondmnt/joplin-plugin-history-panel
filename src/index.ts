@@ -50,7 +50,7 @@ joplin.plugins.register({
       },
 
       'histPanelFontSize': {
-        value: 11,
+        value: 10,
         type: SettingItemType.Int,
         section: 'HistoryPanel',
         public: true,

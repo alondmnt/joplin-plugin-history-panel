@@ -35,12 +35,12 @@ function getFoldTag(now: Date, noteDate: Date, dateScope: Set<string>): string {
   const dayDiff = getDateDay(now) - getDateDay(noteDate);
   if (!dateScope.has('yesterday') && (dayDiff == 1)) {
     dateScope.add('yesterday');
-    return '</details><details><summary class="hist-section">Yesterday</summary>';
+    return '</details><details class="hist-section"><summary class="hist-section">Yesterday</summary>';
   }
   if (!dateScope.has('week') &&
       (dayDiff > 1) && (dayDiff <= 7)) {
     dateScope.add('week');
-    return '</details><details><summary class="hist-section">Last 7 days</summary>';
+    return '</details><details class="hist-section"><summary class="hist-section">Last 7 days</summary>';
   }
 
   let strMonth = getMonthString(noteDate);
@@ -48,7 +48,7 @@ function getFoldTag(now: Date, noteDate: Date, dateScope: Set<string>): string {
     strMonth = 'This month';
   if (!dateScope.has(strMonth) && (dayDiff > 7)) {
     dateScope.add(strMonth)
-    return `</details><details><summary class="hist-section">${strMonth}</summary>`;
+    return `</details><details class="hist-section"><summary class="hist-section">${strMonth}</summary>`;
   }
 
   return '';
@@ -89,8 +89,8 @@ export default async function updateHistView(panel:string) {
   ${userStyle}
   </style>
   <div class="container">
-    <p style="font-size:${userFontsize}pt; font-weight:bold">${userTitle}</p>
-    <details open>
+    <p class="hist-title"><a class="hist-title" href="#" data-slug="${histNoteId}" style="font-size:${userFontsize}pt">${userTitle}</a></p>
+    <details open class="hist-section">
     <summary class="hist-section">Today</summary>
     ${itemHtml}
     </details>
