@@ -84,7 +84,7 @@ joplin.plugins.register({
       label: 'Toggle history panel',
       iconName: 'far fa-hourglass',
       execute: async () => {
-        const vis = await joplin.views.panels.visible(panel)
+        const vis = await joplin.views.panels.visible(panel);
         if (vis)
           joplin.views.panels.hide(panel);
         else{
@@ -99,14 +99,14 @@ joplin.plugins.register({
 
     await joplin.workspace.onNoteSelectionChange(async () => {
       await addHistItem();
-      const vis = await joplin.views.panels.visible(panel)
+      const vis = await joplin.views.panels.visible(panel);
       if (vis)
         updateHistView(panel);
     });
 
     await joplin.views.panels.onMessage(panel, (message) => {
       if (message.name === 'openHistory') {
-        joplin.commands.execute('openNote', message.hash)
+        joplin.commands.execute('openNote', message.hash);
       }
     });
 
