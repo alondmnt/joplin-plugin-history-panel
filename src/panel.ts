@@ -1,4 +1,5 @@
 import joplin from 'api';
+import { parseItem } from './history';
 
 async function histLinks(histNoteId:string): Promise<string> {
   const now = new Date();
@@ -11,15 +12,18 @@ async function histLinks(histNoteId:string): Promise<string> {
 
   const itemHtml = [];
   let foldTag: string;
+  let plotTag: string;
   const dateScope = new Set(['today']);
+
   for (const line of histNote.body.split('\n')) {
-    const noteTitle = line.match(/\[(.*?)\]/g)[0].slice(1, -1);
-    const noteId = line.match(/\((.*?)\)/g)[0].slice(3, -1);
-    const noteDate = new Date(line.split(' ')[0]);
+    const [noteDate, noteTitle, noteId, noteLinks] = parseItem(line);
     foldTag = getFoldTag(now, noteDate, dateScope);
+    plotTag = getPlotTag(noteLinks);
+
     itemHtml.push(`
             ${foldTag}
-            <p class="hist-item">
+            <p class="hist-item" style="margin:0px">
+              ${plotTag}
               <a class="hist-item" href="#" data-slug="${noteId}">
                 ${escapeHtml(noteTitle)}
               </a>
@@ -47,11 +51,18 @@ function getFoldTag(now: Date, noteDate: Date, dateScope: Set<string>): string {
   if (strMonth == getMonthString(now))
     strMonth = 'This month';
   if (!dateScope.has(strMonth) && (dayDiff > 7)) {
-    dateScope.add(strMonth)
+    dateScope.add(strMonth);
     return `</details><details class="hist-section"><summary class="hist-section">${strMonth}</summary>`;
   }
 
   return '';
+}
+
+function getPlotTag(links: string): string {
+  if (links.length == 0)
+    return '<svg class="hist-plot"></svg>';
+
+  return '<svg class="hist-plot"><line x1="0%" y1="0%" x2="0%" y2="100%" style="stroke:rgb(255,0,0);stroke-width:2" /></svg>';
 }
 
 function getDateDay(date: Date): number {

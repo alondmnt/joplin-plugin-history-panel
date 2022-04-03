@@ -17,9 +17,9 @@ html {
   margin: 5px;
 }
 
-.hist-item {
+/* .hist-item {
   margin: 5px;
-}
+} */
 
 .hist-item a {
   color: var(--joplin-color);
@@ -28,4 +28,9 @@ html {
 
 .hist-item a:active, a:hover {
   font-weight: bold;
+}
+
+.hist-plot {
+  height: var(--joplin-font-size);
+  width: 5px;
 }
