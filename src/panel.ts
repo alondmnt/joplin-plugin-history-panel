@@ -22,7 +22,7 @@ async function histLinks(histNoteId:string): Promise<string> {
 
     itemHtml.push(`
             ${foldTag}
-            <p class="hist-item" style="margin:0px">
+            <p class="hist-item">
               ${plotTag}
               <a class="hist-item" href="#" data-slug="${noteId}">
                 ${escapeHtml(noteTitle)}
@@ -62,7 +62,7 @@ function getPlotTag(links: string): string {
   if (links.length == 0)
     return '<svg class="hist-plot"></svg>';
 
-  return '<svg class="hist-plot"><line x1="0%" y1="0%" x2="0%" y2="100%" style="stroke:rgb(255,0,0);stroke-width:2" /></svg>';
+  return '<svg class="hist-plot"><line x1="0%" y1="0%" x2="0%" y2="100%" style="stroke:rgb(255,0,0);" /></svg>';
 }
 
 function getDateDay(date: Date): number {

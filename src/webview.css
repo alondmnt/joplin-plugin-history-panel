@@ -17,9 +17,9 @@ html {
   margin: 5px;
 }
 
-/* .hist-item {
-  margin: 5px;
-} */
+.hist-item {
+  margin: 0px;
+}
 
 .hist-item a {
   color: var(--joplin-color);
@@ -31,6 +31,8 @@ html {
 }
 
 .hist-plot {
-  height: var(--joplin-font-size);
+  height: calc(var(--joplin-font-size) + 2px);
   width: 5px;
+  vertical-align: text-bottom;
+  stroke-width: 2px;
 }
