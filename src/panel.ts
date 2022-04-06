@@ -1,11 +1,11 @@
 import joplin from 'api';
 import { parseItem } from './history';
 
-async function histLinks(histNoteId:string): Promise<string> {
+async function getItemHtml(histNoteId:string): Promise<string> {
   const now = new Date();
   let histNote;
   try {
-    histNote = await joplin.data.get(['notes', histNoteId], { fields: ['id', 'title', 'body'] });
+    histNote = await joplin.data.get(['notes', histNoteId], { fields: ['body'] });
   } catch {
     return 'Please set a history note (from the Tools menu) to start logging';
   }
@@ -14,11 +14,14 @@ async function histLinks(histNoteId:string): Promise<string> {
   let foldTag: string;
   let plotTag: string;
   const dateScope = new Set(['today']);
+  const activeTraj = new Set() as Set<number>;
+  const maxTrajDisplay = 5;
+  const colorMap = ['rgb(255,0,0)', 'rgb(0,255,0)', 'rgb(0,0,255)', 'rgb(128,128,0)', 'rgb(0,128,128)'];
 
   for (const line of histNote.body.split('\n')) {
-    const [noteDate, noteTitle, noteId, noteLinks] = parseItem(line);
+    const [noteDate, noteTitle, noteId, noteTraj] = parseItem(line);
     foldTag = getFoldTag(now, noteDate, dateScope);
-    plotTag = getPlotTag(noteLinks);
+    plotTag = getPlotTag(noteTraj, activeTraj, maxTrajDisplay, colorMap);
 
     itemHtml.push(`
             ${foldTag}
@@ -58,11 +61,18 @@ function getFoldTag(now: Date, noteDate: Date, dateScope: Set<string>): string {
   return '';
 }
 
-function getPlotTag(links: string): string {
-  if (links.length == 0)
-    return '<svg class="hist-plot"></svg>';
-
-  return '<svg class="hist-plot"><line x1="0%" y1="0%" x2="0%" y2="100%" style="stroke:rgb(255,0,0);" /></svg>';
+function getPlotTag(traj: number[], activeTraj: Set<number>,
+      maxTrajDisplay: number, colorMap: string[]): string {
+  // TODO: use activeTraj to style the start/end of trajectories
+  let plot = '<svg class="hist-plot">';
+  for (let i = 1; i <= maxTrajDisplay; i++){
+    if (traj.includes(i))
+      plot += `
+          <line x1="${100*(1-i/(maxTrajDisplay+1))}%" y1="0%" x2="${100*(1-i/(maxTrajDisplay+1))}%" y2="100%"
+            style="stroke:${colorMap[i-1]};" />
+        `;
+  }
+  return plot + '</svg>';
 }
 
 function getDateDay(date: Date): number {
@@ -91,7 +101,7 @@ export default async function updateHistView(panel:string) {
   const userStyle = await joplin.settings.value('histUserStyle') as string;
 
   // First create the HTML for each history item:
-  const itemHtml = await histLinks(histNoteId);
+  const itemHtml = await getItemHtml(histNoteId);
 
   // Finally, insert all the items in a container and set the webview HTML:
   await joplin.views.panels.setHtml(panel, `
