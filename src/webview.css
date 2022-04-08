@@ -38,7 +38,7 @@ html {
   height: calc(var(--joplin-font-size) + 2px);
   width: 20px;
   vertical-align: text-bottom;
-  stroke-width: 3px;
+  stroke-width: 2px;
 }
 
 ::-webkit-scrollbar {

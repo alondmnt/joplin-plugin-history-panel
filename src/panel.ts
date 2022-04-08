@@ -15,8 +15,8 @@ async function getItemHtml(histNoteId:string): Promise<string> {
   let plotTag: string;
   const dateScope = new Set(['today']);
   const activeTraj = new Set() as Set<number>;
-  const maxTrajDisplay = 5;
-  const colorMap = ['rgb(255,0,0)', 'rgb(0,255,0)', 'rgb(0,0,255)', 'rgb(128,128,0)', 'rgb(0,128,128)'];
+  const maxTrajDisplay = 3;
+  const colorMap = ['#e07a5f', '#81b29a', '#f2cc8f', '#6083c5', '#8e646b', '#858935'];
 
   for (const line of histNote.body.split('\n')) {
     const [noteDate, noteTitle, noteId, noteTraj] = parseItem(line);
@@ -63,14 +63,42 @@ function getFoldTag(now: Date, noteDate: Date, dateScope: Set<string>): string {
 
 function getPlotTag(traj: number[], activeTraj: Set<number>,
       maxTrajDisplay: number, colorMap: string[]): string {
-  // TODO: use activeTraj to style the start/end of trajectories
+  const plotSize = [20, 14];  // 'calc(var(--joplin-font-size) + 2px)'
+  const yDot = plotSize[1] / 2;  // connector pos
+  const rDotMax = 0.5*maxTrajDisplay + 2;
+  const xBase = plotSize[0] - rDotMax;
+  const yControl = plotSize[1] / 2;
   let plot = '<svg class="hist-plot">';
+
   for (let i = 1; i <= maxTrajDisplay; i++){
-    if (traj.includes(i))
-      plot += `
-          <line x1="${100*(1-i/(maxTrajDisplay+1))}%" y1="0%" x2="${100*(1-i/(maxTrajDisplay+1))}%" y2="100%"
-            style="stroke:${colorMap[i-1]};" />
-        `;
+    const color = colorMap[i-1];
+    const xLevel = xBase * (1 - (i-1)/(maxTrajDisplay));
+    const rLevel = rDotMax - (i-1)/2;
+
+    if (traj.includes(i)) {
+      if (activeTraj.has(i))  // continue trajectory
+        plot += `
+            <line x1="${xLevel}" y1="0" x2="${xLevel}" y2="${plotSize[1]}"
+              style="stroke:${color};" />
+          `;
+      else {  // start trajectory
+        activeTraj.add(i);
+        plot += `
+          <path d="M ${xBase} ${yDot} C ${xBase} ${yControl}, ${xLevel} ${yControl}, ${xLevel} ${plotSize[1]}"
+            stroke="${color}" fill="none" />
+          <circle cx="${xBase}" cy="${yDot}" r="${rLevel}"
+            stroke="none" fill="${color}" />
+          `;
+      }
+    } else if (activeTraj.has(i)){ // end trajectory
+        activeTraj.delete(i);
+        plot += `
+          <path d="M ${xLevel} 0 C ${xLevel} ${yControl}, ${xBase} ${yControl}, ${xBase} ${yDot}"
+            stroke="${color}" fill="none" />
+          <circle cx="${xBase}" cy="${yDot}" r="${rLevel}"
+            stroke="none" fill="${color}" />
+          `;
+    }
   }
   return plot + '</svg>';
 }

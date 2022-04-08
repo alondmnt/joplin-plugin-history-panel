@@ -46,12 +46,12 @@ export default async function addHistItem() {
   if (isDuplicate(histNote.body, note, date))  // do not duplicate the last item
     newItem = '';
 
-  const lines = histNote.body.split('\n');
+  const lines = (newItem + histNote.body).split('\n');
   const processed = new Set() as Set<string>;
   await addTrajToItem(note, lines, 0, processed, new Set() as Set<number>);
   histNote.body = lines.join('\n');
 
-  await joplin.data.put(['notes', histNote.id], null, { body: newItem + histNote.body});
+  await joplin.data.put(['notes', histNote.id], null, { body: histNote.body});
 
   // const finish = new Date();
   // console.log('took ' + (finish.getTime() - date.getTime()) + 'ms.')
@@ -86,12 +86,12 @@ async function addTrajToItem(note: any, lines: string[], i: number,
 
     if (!skip && isLinked(note.body, note.id, item.body, item.id)) {
       let nextLevel: number;
-      if (i == 0)
+      if (i == 1)
         nextLevel = 1;
       else
         nextLevel = getNextLevel(existLevels);
-      itemTraj.push(nextLevel);  
-      lines[i] = formatItem(itemDate, itemTitle, itemId, itemTraj);
+      // itemTraj.push(nextLevel);  
+      // lines[i] = formatItem(itemDate, itemTitle, itemId, itemTraj);
       return [true, nextLevel];  // link found
     }
     processed.add(itemId);
@@ -151,9 +151,9 @@ function cleanNewHist(body: string, newItemDate: Date, minSecBetweenItems: numbe
     return body;
   // remove last item from history
   const ind = body.search('\n');
-  body = body.slice(ind+1);
+  body = cleanNewTraj(body).slice(ind+1);
 
-  return cleanNewTraj(body);
+  return body;
 }
 
 function cleanNewTraj(body: string): string {
