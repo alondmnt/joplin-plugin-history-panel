@@ -1,11 +1,11 @@
 import joplin from 'api';
-import { parseItem } from './history';
+import { HistSettings, parseItem } from './history';
 
-async function getItemHtml(histNoteId:string): Promise<string> {
+async function getItemHtml(params: HistSettings): Promise<string> {
   const now = new Date();
   let histNote;
   try {
-    histNote = await joplin.data.get(['notes', histNoteId], { fields: ['body'] });
+    histNote = await joplin.data.get(['notes', params.histNoteId], { fields: ['body'] });
   } catch {
     return 'Please set a history note (from the Tools menu) to start logging';
   }
@@ -15,13 +15,11 @@ async function getItemHtml(histNoteId:string): Promise<string> {
   let plotTag: string;
   const dateScope = new Set(['today']);
   const activeTraj = new Set() as Set<number>;
-  const maxTrajDisplay = 3;
-  const colorMap = ['#e07a5f', '#81b29a', '#f2cc8f', '#6083c5', '#8e646b', '#858935'];
 
   for (const line of histNote.body.split('\n')) {
     const [noteDate, noteTitle, noteId, noteTraj] = parseItem(line);
     foldTag = getFoldTag(now, noteDate, dateScope);
-    plotTag = getPlotTag(noteTraj, activeTraj, maxTrajDisplay, colorMap);
+    plotTag = getPlotTag(noteTraj, activeTraj, params);
 
     itemHtml.push(`
             ${foldTag}
@@ -61,18 +59,17 @@ function getFoldTag(now: Date, noteDate: Date, dateScope: Set<string>): string {
   return '';
 }
 
-function getPlotTag(traj: number[], activeTraj: Set<number>,
-      maxTrajDisplay: number, colorMap: string[]): string {
-  const plotSize = [20, 14];  // 'calc(var(--joplin-font-size) + 2px)'
+function getPlotTag(traj: number[], activeTraj: Set<number>, params: HistSettings): string {
+  const plotSize = [params.trajWidth, 14];  // 'calc(var(--joplin-font-size) + 2px)'
   const yDot = plotSize[1] / 2;  // connector pos
-  const rDotMax = 0.5*maxTrajDisplay + 2;
+  const rDotMax = 0.5*params.trajDisplay + 2;
   const xBase = plotSize[0] - rDotMax;
   const yControl = plotSize[1] / 2;
-  let plot = '<svg class="hist-plot">';
+  let plot = `<svg class="hist-plot" style="width: ${params.trajWidth}px">`;
 
-  for (let i = 1; i <= maxTrajDisplay; i++){
-    const color = colorMap[i-1];
-    const xLevel = xBase * (1 - (i-1)/(maxTrajDisplay));
+  for (let i = 1; i <= params.trajDisplay; i++){
+    const color = params.trajColors[(i-1) % params.trajColors.length];
+    const xLevel = xBase * (1 - (i-1)/(params.trajDisplay));
     const rLevel = rDotMax - (i-1)/2;
 
     if (traj.includes(i)) {
@@ -121,24 +118,20 @@ function escapeHtml(unsafe:string): string {
     .replace(/'/g, "&#039;");
 }
 
-export default async function updateHistView(panel:string) {
+export default async function updateHistView(panel:string, params: HistSettings) {
   // const start = new Date().getTime();
-  const histNoteId = await joplin.settings.value('histNoteId') as string;
-  const userTitle = await joplin.settings.value('histPanelTitle') as string;
-  const userFontsize = await joplin.settings.value('histPanelFontSize') as number;
-  const userStyle = await joplin.settings.value('histUserStyle') as string;
 
   // First create the HTML for each history item:
-  const itemHtml = await getItemHtml(histNoteId);
+  const itemHtml = await getItemHtml(params);
 
   // Finally, insert all the items in a container and set the webview HTML:
   await joplin.views.panels.setHtml(panel, `
   <html>
   <style>
-  ${userStyle}
+  ${params.userStyle}
   </style>
   <div class="container">
-    <p class="hist-title"><a class="hist-title" href="#" data-slug="${histNoteId}" style="font-size:${userFontsize}pt">${userTitle}</a></p>
+    <p class="hist-title"><a class="hist-title" href="#" data-slug="${params.histNoteId}" style="font-size:${params.panelFontSize}pt">${params.panelTitle}</a></p>
     <details open class="hist-section">
     <summary class="hist-section">Today</summary>
     ${itemHtml}

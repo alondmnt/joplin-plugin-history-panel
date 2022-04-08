@@ -4,10 +4,24 @@ const titleExp = new RegExp(/\[(.*?)\]/g);
 const idExp = new RegExp(/\((.*?)\)/g);
 const linkExp = new RegExp(/{(.*?)}/g);
 
+export interface HistSettings {
+  histNoteId: string;
+  secBetweenItems: number;
+  maxDays: number;
+  panelTitle: string;
+  panelFontSize: number;
+  trajDisplay: number;
+  trajRecords: number;
+  trajLength: number;
+  trajWidth: number;
+  trajColors: string[];
+  userStyle: string;
+}
+
 /**
  * logs a new selected note in the history note.
  */
-export default async function addHistItem() {
+export default async function addHistItem(params: HistSettings) {
   // settings
   let note;
   try {
@@ -19,14 +33,13 @@ export default async function addHistItem() {
     console.log('addHistItem: failed to get selected note');
     return;
   }
-  const histNoteId = await joplin.settings.value('histNoteId') as string;
-  if (note.id == histNoteId) return;
+  if (note.id == params.histNoteId) return;
 
   let histNote;
   try {
-    histNote = await joplin.data.get(['notes', histNoteId], { fields: ['id', 'title', 'body'] });
+    histNote = await joplin.data.get(['notes', params.histNoteId], { fields: ['id', 'title', 'body'] });
   } catch {
-    console.log('addHistItem: failed when histNoteId = ' + histNoteId);
+    console.log('addHistItem: failed when histNoteId = ' + params.histNoteId);
     return
   }
 
@@ -34,13 +47,11 @@ export default async function addHistItem() {
   if (isDuplicate(histNote.body, note, date))  // do not duplicate the last item
     return
 
-  const minSecBetweenItems = await joplin.settings.value('minSecBetweenItems') as number;
-  if (minSecBetweenItems > 0)
-    histNote.body = cleanNewHist(histNote.body, date, minSecBetweenItems);
+  if (params.secBetweenItems > 0)
+    histNote.body = cleanNewHist(histNote.body, date, params.secBetweenItems);
 
-  const maxHistDays = await joplin.settings.value('maxHistDays') as number;
-  if (maxHistDays > 0)
-    histNote.body = cleanOldHist(histNote.body, date, maxHistDays);
+  if (params.maxDays > 0)
+    histNote.body = cleanOldHist(histNote.body, date, params.maxDays);
 
   let newItem = formatItem(date, note.title, note.id, []) + '\n';
   if (isDuplicate(histNote.body, note, date))  // do not duplicate the last item
@@ -48,7 +59,7 @@ export default async function addHistItem() {
 
   const lines = (newItem + histNote.body).split('\n');
   const processed = new Set() as Set<string>;
-  await addTrajToItem(note, lines, 0, processed, new Set() as Set<number>);
+  await addTrajToItem(note, lines, 0, processed, new Set() as Set<number>, params);
   histNote.body = lines.join('\n');
 
   await joplin.data.put(['notes', histNote.id], null, { body: histNote.body});
@@ -62,17 +73,19 @@ export default async function addHistItem() {
  * and updates the body of the history note with new trajectories.
  */
 async function addTrajToItem(note: any, lines: string[], i: number,
-    processed: Set<string>, existLevels: Set<number>):
+    processed: Set<string>, existLevels: Set<number>, params: HistSettings):
     Promise<[boolean, number]> {
   if (i == lines.length)
     return [false, 1]
   const [itemDate, itemTitle, itemId, itemTraj] = parseItem(lines[i]);
 
-  /* TODO: stop when i is too large, or date is too old*/
-  if (i > 20)
+  if (i > params.trajLength)
     return [false, getNextLevel(existLevels)];  // link not found
 
   existLevels = setUnion(existLevels, new Set(itemTraj));
+  const nl = getNextLevel(existLevels);
+  if ((i > 1) && (nl > params.trajRecords))
+    return [false, nl];  // link not found
 
   if (!processed.has(itemId)){
     let skip = false;
@@ -90,15 +103,14 @@ async function addTrajToItem(note: any, lines: string[], i: number,
         nextLevel = 1;
       else
         nextLevel = getNextLevel(existLevels);
-      // itemTraj.push(nextLevel);  
-      // lines[i] = formatItem(itemDate, itemTitle, itemId, itemTraj);
+      // add trajectory to all previous items (but not to current)
       return [true, nextLevel];  // link found
     }
     processed.add(itemId);
   }
 
   // processed, means that it is not linked to the note, continue processing
-  const [foundLink, nextLevel] = await addTrajToItem(note, lines, i+1, processed, existLevels);
+  const [foundLink, nextLevel] = await addTrajToItem(note, lines, i+1, processed, existLevels, params);
   if (foundLink){
     itemTraj.push(nextLevel);
     lines[i] = formatItem(itemDate, itemTitle, itemId, itemTraj);

@@ -1,7 +1,35 @@
 import joplin from 'api';
 import { SettingItemType, MenuItemLocation, ToolbarButtonLocation } from 'api/types';
-import addHistItem from './history';
+import addHistItem, { HistSettings } from './history';
 import updateHistView from './panel'
+
+const settings:HistSettings = {
+  histNoteId: '',
+  secBetweenItems: 0,
+  maxDays: 90,
+  panelTitle: 'HISTORY',
+  panelFontSize: 10,
+  trajDisplay: 3,
+  trajRecords: 6,
+  trajLength: 10,
+  trajWidth: 20,
+  trajColors: ['#e07a5f', '#81b29a', '#f2cc8f', '#6083c5', '#8e646b', '#858935'],
+  userStyle: '',
+}
+
+async function updateSettings() {
+  settings.histNoteId = await joplin.settings.value('histNoteId');
+  settings.secBetweenItems = await joplin.settings.value('histSecBetweenItems');
+  settings.maxDays = await joplin.settings.value('histMaxDays');
+  settings.panelTitle = await joplin.settings.value('histPanelTitle');
+  settings.panelFontSize = await joplin.settings.value('histPanelFontSize');
+  settings.trajDisplay = await joplin.settings.value('histTrajDisplay');
+  settings.trajRecords = await joplin.settings.value('histTrajRecords');
+  settings.trajLength = await joplin.settings.value('histTrajLength');
+  settings.trajWidth = await joplin.settings.value('histTrajWidth');
+  settings.trajColors = (await joplin.settings.value('histTrajColors')).split(',');
+  settings.userStyle = await joplin.settings.value('histUserStyle');
+};
 
 joplin.plugins.register({
   onStart: async function() {
@@ -17,23 +45,23 @@ joplin.plugins.register({
 
     await joplin.settings.registerSettings({
       'histNoteId': {
-        value: '',
+        value: settings.histNoteId,
         type: SettingItemType.String,
         section: 'HistoryPanel',
         public: true,
         label: 'History note ID',
       },
 
-      'minSecBetweenItems': {
-        value: 0,
+      'histSecBetweenItems': {
+        value: settings.secBetweenItems,
         type: SettingItemType.Int,
         section: 'HistoryPanel',
         public: true,
         label: 'Min seconds between history items',
       },
 
-      'maxHistDays': {
-        value: 90,
+      'histMaxDays': {
+        value: settings.maxDays,
         type: SettingItemType.Int,
         section: 'HistoryPanel',
         public: true,
@@ -42,7 +70,7 @@ joplin.plugins.register({
       },
 
       'histPanelTitle': {
-        value: 'HISTORY',
+        value: settings.panelTitle,
         type: SettingItemType.String,
         section: 'HistoryPanel',
         public: true,
@@ -50,20 +78,61 @@ joplin.plugins.register({
       },
 
       'histPanelFontSize': {
-        value: 10,
+        value: settings.panelFontSize,
         type: SettingItemType.Int,
         section: 'HistoryPanel',
         public: true,
         label: 'Panel title font size',
       },
 
+      'histTrajDisplay': {
+        value: settings.trajDisplay,
+        type: SettingItemType.Int,
+        section: 'HistoryPanel',
+        public: true,
+        label: 'No. of trajectory (note links) levels to display',
+        description: 'Enter 0 to hide',
+      },
+
+      'histTrajRecords': {
+        value: settings.trajRecords,
+        type: SettingItemType.Int,
+        section: 'HistoryPanel',
+        public: true,
+        label: 'No. of trajectory levels to record in logs',
+      },
+
+      'histTrajLength': {
+        value: settings.trajLength,
+        type: SettingItemType.Int,
+        section: 'HistoryPanel',
+        public: true,
+        label: 'Max trajectory length',
+      },
+
+      'histTrajWidth': {
+        value: settings.trajWidth,
+        type: SettingItemType.Int,
+        section: 'HistoryPanel',
+        public: true,
+        label: 'Trajectory plot width (px)',
+      },
+
+      'histTrajColors': {
+        value: settings.trajColors.join(','),
+        type: SettingItemType.String,
+        section: 'HistoryPanel',
+        public: true,
+        label: 'Trajectories color map',
+        description: 'Comma-separated colors'
+      },
+
       'histUserStyle': {
-        value: '',
+        value: settings.userStyle,
         type: SettingItemType.String,
         section: 'HistoryPanel',
         public: true,
         label: 'Panel stylesheet',
-        description: 'Classes include "hist-section" and "hist-item"'
       },
     });
 
@@ -88,7 +157,7 @@ joplin.plugins.register({
         if (vis)
           joplin.views.panels.hide(panel);
         else{
-          updateHistView(panel);
+          updateHistView(panel, settings);
           joplin.views.panels.show(panel);
         }
       },
@@ -97,11 +166,16 @@ joplin.plugins.register({
     await joplin.views.menuItems.create('menuHistPanel', 'toggleHistPanel', MenuItemLocation.View);
     await joplin.views.toolbarButtons.create('butHistPanel', 'toggleHistPanel', ToolbarButtonLocation.NoteToolbar);
 
+    await joplin.settings.onChange(async () => {
+      await updateSettings();
+      updateHistView(panel, settings);
+    });
+
     await joplin.workspace.onNoteSelectionChange(async () => {
-      await addHistItem();
+      await addHistItem(settings);
       const vis = await joplin.views.panels.visible(panel);
       if (vis)
-        updateHistView(panel);
+        updateHistView(panel, settings);
     });
 
     await joplin.views.panels.onMessage(panel, (message) => {
@@ -110,6 +184,7 @@ joplin.plugins.register({
       }
     });
 
-    updateHistView(panel);
+    await updateSettings();
+    updateHistView(panel, settings);
   },
 });
