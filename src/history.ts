@@ -53,12 +53,14 @@ export default async function addHistItem(params: HistSettings) {
   if (params.maxDays > 0)
     histNote.body = cleanOldHist(histNote.body, date, params.maxDays);
 
-  let newItem = formatItem(date, note.title, note.id, []) + '\n';
-  if (isDuplicate(histNote.body, note, date))  // do not duplicate the last item
-    newItem = '';
+  if (isDuplicate(histNote.body, note, date)) {  // do not duplicate the last item
+    await joplin.data.put(['notes', histNote.id], null, { body: histNote.body });
+    return
+  }
 
   histNote.body = await fixUntitledItem(histNote.body);
 
+  const newItem = formatItem(date, note.title, note.id, []) + '\n';
   const lines = (newItem + histNote.body).split('\n');
   const processed = new Set() as Set<string>;
   await addTrailToItem(note, lines, 0, processed, new Set() as Set<number>, params);
