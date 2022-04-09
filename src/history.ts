@@ -1,8 +1,7 @@
 import joplin from 'api';
 
-const titleExp = new RegExp(/\[(.*?)\]/g);
-const idExp = new RegExp(/\((.*?)\)/g);
 const linkExp = new RegExp(/{(.*?)}/g);
+const noteExp = new RegExp(/\[(?<title>[^\[]+)\]\(:\/(?<id>.*)\)/g);
 
 export interface HistSettings {
   histNoteId: string;
@@ -129,15 +128,16 @@ function formatItem(date: Date, title: string, id: string, traj: number[]): stri
 export function parseItem(line: string): [Date, string, string, number[]] {
   const date = new Date(line.slice(0, 24));
 
+  noteExp.lastIndex = 0;
+  const noteMatch = noteExp.exec(line);
   let title = '';
-  const titleMatch = line.match(titleExp);
-  if (titleMatch)
-    title = titleMatch[0].slice(1, -1)
-
   let id = '';
-  const idMatch = line.match(idExp)
-  if (idMatch)
-    id = idMatch[0].slice(3, -1);
+  if (noteMatch){
+    title = noteMatch.groups.title;
+    id = noteMatch.groups.id;
+  }
+  if (title.length == 0)
+    console.log('bad parse, line=' + line)
 
   let traj = [] as number[];
   const linkMatch = line.match(linkExp);
