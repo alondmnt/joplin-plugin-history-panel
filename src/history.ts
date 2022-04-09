@@ -9,11 +9,11 @@ export interface HistSettings {
   maxDays: number;
   panelTitle: string;
   panelFontSize: number;
-  trajDisplay: number;
-  trajRecords: number;
-  trajLength: number;
-  trajWidth: number;
-  trajColors: string[];
+  trailDisplay: number;
+  trailRecords: number;
+  trailLength: number;
+  trailWidth: number;
+  trailColors: string[];
   userStyle: string;
 }
 
@@ -58,7 +58,7 @@ export default async function addHistItem(params: HistSettings) {
 
   const lines = (newItem + histNote.body).split('\n');
   const processed = new Set() as Set<string>;
-  await addTrajToItem(note, lines, 0, processed, new Set() as Set<number>, params);
+  await addTrailToItem(note, lines, 0, processed, new Set() as Set<number>, params);
   histNote.body = lines.join('\n');
 
   await joplin.data.put(['notes', histNote.id], null, { body: histNote.body});
@@ -69,21 +69,21 @@ export default async function addHistItem(params: HistSettings) {
 
 /**
  * recursively searches for links to a new history item,
- * and updates the body of the history note with new trajectories.
+ * and updates the body of the history note with new trails.
  */
-async function addTrajToItem(note: any, lines: string[], i: number,
+async function addTrailToItem(note: any, lines: string[], i: number,
     processed: Set<string>, existLevels: Set<number>, params: HistSettings):
     Promise<[boolean, number]> {
   if (i == lines.length)
     return [false, 1]
-  const [itemDate, itemTitle, itemId, itemTraj] = parseItem(lines[i]);
+  const [itemDate, itemTitle, itemId, itemTrail] = parseItem(lines[i]);
 
-  if (i > params.trajLength)
+  if (i > params.trailLength)
     return [false, getNextLevel(existLevels)];  // link not found
 
-  existLevels = setUnion(existLevels, new Set(itemTraj));
+  existLevels = setUnion(existLevels, new Set(itemTrail));
   const nl = getNextLevel(existLevels);
-  if ((i > 1) && (nl > params.trajRecords))
+  if ((i > 1) && (nl > params.trailRecords))
     return [false, nl];  // link not found
 
   if (!processed.has(itemId)){
@@ -93,7 +93,7 @@ async function addTrajToItem(note: any, lines: string[], i: number,
       item = await joplin.data.get(['notes', itemId], { fields: ['id', 'body'] });
     } catch {
       skip = true;
-      console.log('addTrajToItem: bad note');
+      console.log('addTrailToItem: bad note');
     }
 
     if (!skip && isLinked(note.body, note.id, item.body, item.id)) {
@@ -102,27 +102,27 @@ async function addTrajToItem(note: any, lines: string[], i: number,
         nextLevel = 1;
       else
         nextLevel = getNextLevel(existLevels);
-      // add trajectory to all previous items (but not to current)
+      // add trail to all previous items (but not to current)
       return [true, nextLevel];  // link found
     }
     processed.add(itemId);
   }
 
   // processed, means that it is not linked to the note, continue processing
-  const [foundLink, nextLevel] = await addTrajToItem(note, lines, i+1, processed, existLevels, params);
+  const [foundLink, nextLevel] = await addTrailToItem(note, lines, i+1, processed, existLevels, params);
   if (foundLink){
-    itemTraj.push(nextLevel);
-    lines[i] = formatItem(itemDate, itemTitle, itemId, itemTraj);
+    itemTrail.push(nextLevel);
+    lines[i] = formatItem(itemDate, itemTitle, itemId, itemTrail);
   }
   return [foundLink, nextLevel];
 }
 
-function formatItem(date: Date, title: string, id: string, traj: number[]): string {
-  let trajString = '';
-  if (traj.length > 0)
-    trajString = ` {${traj.sort().map(String).join(',')}}`;
+function formatItem(date: Date, title: string, id: string, trail: number[]): string {
+  let trailString = '';
+  if (trail.length > 0)
+    trailString = ` {${trail.sort().map(String).join(',')}}`;
 
-  return `${date.toISOString()} [${title}](:/${id})${trajString}`;
+  return `${date.toISOString()} [${title}](:/${id})${trailString}`;
 }
 
 export function parseItem(line: string): [Date, string, string, number[]] {
@@ -139,17 +139,17 @@ export function parseItem(line: string): [Date, string, string, number[]] {
   if (title.length == 0)
     console.log('bad parse, line=' + line)
 
-  let traj = [] as number[];
+  let trail = [] as number[];
   const linkMatch = line.match(linkExp);
   if (linkMatch)
-    traj = linkMatch[0].slice(1, -1).split(',').map(Number);
+    trail = linkMatch[0].slice(1, -1).split(',').map(Number);
 
-  return [date, title, id, traj];
+  return [date, title, id, trail];
 }
 
 function isDuplicate(body: string, note: any, date: Date): boolean {
   const ind = body.search('\n');
-  const [itemDate, itemTitle, itemId, itemTraj] = parseItem(body.slice(0, ind));
+  const [itemDate, itemTitle, itemId, itemTrail] = parseItem(body.slice(0, ind));
   // TODO: if this becomes too slow, skip parseItem and get just the date, id
   return (itemId == note.id) && (itemDate.getDate() == date.getDate());
 }
@@ -163,26 +163,26 @@ function cleanNewHist(body: string, newItemDate: Date, minSecBetweenItems: numbe
     return body;
   // remove last item from history
   const ind = body.search('\n');
-  body = cleanNewTraj(body).slice(ind+1);
+  body = cleanNewTrail(body).slice(ind+1);
 
   return body;
 }
 
-function cleanNewTraj(body: string): string {
+function cleanNewTrail(body: string): string {
   const ind = body.search('\n');
-  const itemTraj = parseItem(body.slice(0, ind))[3];
-  if (itemTraj.length == 0)
+  const itemTrail = parseItem(body.slice(0, ind))[3];
+  if (itemTrail.length == 0)
     return body;
 
-  const level = itemTraj[0];  // last item has at most one trajectory
+  const level = itemTrail[0];  // last item has at most one trail
   const lines = body.split('\n');
   for (let i = 0; i <= lines.length; i++) {
-    const [itemDate, itemTitle, itemId, itemTraj] = parseItem(lines[i]);
+    const [itemDate, itemTitle, itemId, itemTrail] = parseItem(lines[i]);
     try {
       lines[i] = formatItem(itemDate, itemTitle, itemId, 
-          itemTraj.splice(itemTraj.indexOf(level), 1));
+          itemTrail.splice(itemTrail.indexOf(level), 1));
     } catch {
-      console.log(`cleanNewTraj: failed to format date=${itemDate}\nwhen level=${level}\nline=${lines}`)
+      console.log(`cleanNewTrail: failed to format date=${itemDate}\nwhen level=${level}\nline=${lines}`)
     }
   }
   return lines.join('\n');

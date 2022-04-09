@@ -9,11 +9,11 @@ const settings:HistSettings = {
   maxDays: 90,
   panelTitle: 'HISTORY',
   panelFontSize: 10,
-  trajDisplay: 3,
-  trajRecords: 6,
-  trajLength: 10,
-  trajWidth: 20,
-  trajColors: ['#e07a5f', '#81b29a', '#f2cc8f', '#6083c5', '#8e646b', '#858935'],
+  trailDisplay: 3,
+  trailRecords: 6,
+  trailLength: 10,
+  trailWidth: 20,
+  trailColors: ['#e07a5f', '#81b29a', '#f2cc8f', '#6083c5', '#8e646b', '#858935'],
   userStyle: '',
 }
 
@@ -23,11 +23,11 @@ async function updateSettings() {
   settings.maxDays = await joplin.settings.value('histMaxDays');
   settings.panelTitle = await joplin.settings.value('histPanelTitle');
   settings.panelFontSize = await joplin.settings.value('histPanelFontSize');
-  settings.trajDisplay = await joplin.settings.value('histTrajDisplay');
-  settings.trajRecords = await joplin.settings.value('histTrajRecords');
-  settings.trajLength = await joplin.settings.value('histTrajLength');
-  settings.trajWidth = await joplin.settings.value('histTrajWidth');
-  settings.trajColors = (await joplin.settings.value('histTrajColors')).split(',');
+  settings.trailDisplay = await joplin.settings.value('histTrailDisplay');
+  settings.trailRecords = await joplin.settings.value('histTrailRecords');
+  settings.trailLength = await joplin.settings.value('histTrailLength');
+  settings.trailWidth = await joplin.settings.value('histTrailWidth');
+  settings.trailColors = (await joplin.settings.value('histTrailColors')).split(',');
   settings.userStyle = await joplin.settings.value('histUserStyle');
 };
 
@@ -85,45 +85,45 @@ joplin.plugins.register({
         label: 'Panel title font size',
       },
 
-      'histTrajDisplay': {
-        value: settings.trajDisplay,
+      'histTrailDisplay': {
+        value: settings.trailDisplay,
         type: SettingItemType.Int,
         section: 'HistoryPanel',
         public: true,
-        label: 'No. of trajectory (note links) levels to display',
+        label: 'No. of trails (note links) levels to display',
         description: 'Enter 0 to hide',
       },
 
-      'histTrajRecords': {
-        value: settings.trajRecords,
+      'histTrailRecords': {
+        value: settings.trailRecords,
         type: SettingItemType.Int,
         section: 'HistoryPanel',
         public: true,
-        label: 'No. of trajectory levels to record in logs',
+        label: 'No. of trails levels to record in logs',
       },
 
-      'histTrajLength': {
-        value: settings.trajLength,
+      'histTrailLength': {
+        value: settings.trailLength,
         type: SettingItemType.Int,
         section: 'HistoryPanel',
         public: true,
-        label: 'Max trajectory length',
+        label: 'Max trail length',
       },
 
-      'histTrajWidth': {
-        value: settings.trajWidth,
+      'histTrailWidth': {
+        value: settings.trailWidth,
         type: SettingItemType.Int,
         section: 'HistoryPanel',
         public: true,
-        label: 'Trajectory plot width (px)',
+        label: 'Trail plot width (px)',
       },
 
-      'histTrajColors': {
-        value: settings.trajColors.join(','),
+      'histTrailColors': {
+        value: settings.trailColors.join(','),
         type: SettingItemType.String,
         section: 'HistoryPanel',
         public: true,
-        label: 'Trajectories color map',
+        label: 'Trails color map',
         description: 'Comma-separated colors'
       },
 

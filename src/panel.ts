@@ -14,12 +14,12 @@ async function getItemHtml(params: HistSettings): Promise<string> {
   let foldTag: string;
   let plotTag: string;
   const dateScope = new Set(['today']);
-  const activeTraj = new Set() as Set<number>;
+  const activeTrail = new Set() as Set<number>;
 
   for (const line of histNote.body.split('\n')) {
-    const [noteDate, noteTitle, noteId, noteTraj] = parseItem(line);
+    const [noteDate, noteTitle, noteId, noteTrail] = parseItem(line);
     foldTag = getFoldTag(now, noteDate, dateScope);
-    plotTag = getPlotTag(noteTraj, activeTraj, params);
+    plotTag = getPlotTag(noteTrail, activeTrail, params);
 
     itemHtml.push(`
             ${foldTag}
@@ -59,27 +59,27 @@ function getFoldTag(now: Date, noteDate: Date, dateScope: Set<string>): string {
   return '';
 }
 
-function getPlotTag(traj: number[], activeTraj: Set<number>, params: HistSettings): string {
-  const plotSize = [params.trajWidth, 14];  // 'calc(var(--joplin-font-size) + 2px)'
+function getPlotTag(trail: number[], activeTrail: Set<number>, params: HistSettings): string {
+  const plotSize = [params.trailWidth, 14];  // 'calc(var(--joplin-font-size) + 2px)'
   const yDot = plotSize[1] / 2;  // connector pos
-  const rDotMax = 0.5*params.trajDisplay + 2;
+  const rDotMax = 0.5*params.trailDisplay + 2;
   const xBase = plotSize[0] - rDotMax;
   const yControl = plotSize[1] / 2;
-  let plot = `<svg class="hist-plot" style="width: ${params.trajWidth}px">`;
+  let plot = `<svg class="hist-plot" style="width: ${params.trailWidth}px">`;
 
-  for (let i = 1; i <= params.trajDisplay; i++){
-    const color = params.trajColors[(i-1) % params.trajColors.length];
-    const xLevel = xBase * (1 - (i-1)/(params.trajDisplay));
+  for (let i = 1; i <= params.trailDisplay; i++){
+    const color = params.trailColors[(i-1) % params.trailColors.length];
+    const xLevel = xBase * (1 - (i-1)/(params.trailDisplay));
     const rLevel = rDotMax - (i-1)/2;
 
-    if (traj.includes(i)) {
-      if (activeTraj.has(i))  // continue trajectory
+    if (trail.includes(i)) {
+      if (activeTrail.has(i))  // continue trail
         plot += `
             <line x1="${xLevel}" y1="0" x2="${xLevel}" y2="${plotSize[1]}"
               style="stroke:${color};" />
           `;
-      else {  // start trajectory
-        activeTraj.add(i);
+      else {  // start trail
+        activeTrail.add(i);
         plot += `
           <path d="M ${xBase} ${yDot} C ${xBase} ${yControl}, ${xLevel} ${yControl}, ${xLevel} ${plotSize[1]}"
             stroke="${color}" fill="none" />
@@ -87,8 +87,8 @@ function getPlotTag(traj: number[], activeTraj: Set<number>, params: HistSetting
             stroke="none" fill="${color}" />
           `;
       }
-    } else if (activeTraj.has(i)){ // end trajectory
-        activeTraj.delete(i);
+    } else if (activeTrail.has(i)){ // end trail
+        activeTrail.delete(i);
         plot += `
           <path d="M ${xLevel} 0 C ${xLevel} ${yControl}, ${xBase} ${yControl}, ${xBase} ${yDot}"
             stroke="${color}" fill="none" />
