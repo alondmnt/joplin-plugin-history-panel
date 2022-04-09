@@ -57,6 +57,8 @@ export default async function addHistItem(params: HistSettings) {
   if (isDuplicate(histNote.body, note, date))  // do not duplicate the last item
     newItem = '';
 
+  histNote.body = await fixUntitledItem(histNote.body);
+
   const lines = (newItem + histNote.body).split('\n');
   const processed = new Set() as Set<string>;
   await addTrailToItem(note, lines, 0, processed, new Set() as Set<number>, params);
@@ -200,6 +202,20 @@ function cleanOldHist(body: string, newItemDate: Date, maxHistDays: number): str
       break;
   }
   return lines.slice(0, i+1).join('\n');
+}
+
+/**
+ * if the last item is untitled, which happens in the case of a
+ * newly created note, this function tries to update its title.
+ */
+ async function fixUntitledItem(body: string): Promise<string> {
+  const ind = body.search('\n');
+  let [itemDate, itemTitle, itemId, itemTrail] = parseItem(body.slice(0, ind));
+  if (itemTitle == 'Untitled') {
+    const note = await joplin.data.get(['notes', itemId], { fields: ['title'] });
+    body = formatItem(itemDate, note.title, itemId, itemTrail) + body.slice(ind);
+  }
+  return body
 }
 
 function isLinked(body1: string, id1: string, body2: string, id2: string, backlinks: boolean): boolean {
