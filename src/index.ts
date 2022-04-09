@@ -11,6 +11,7 @@ const settings:HistSettings = {
   panelFontSize: 10,
   trailDisplay: 3,
   trailRecords: 6,
+  trailBacklinks: true,
   trailLength: 10,
   trailWidth: 20,
   trailColors: ['#e07a5f', '#81b29a', '#f2cc8f', '#6083c5', '#8e646b', '#858935'],
@@ -25,6 +26,7 @@ async function updateSettings() {
   settings.panelFontSize = await joplin.settings.value('histPanelFontSize');
   settings.trailDisplay = await joplin.settings.value('histTrailDisplay');
   settings.trailRecords = await joplin.settings.value('histTrailRecords');
+  settings.trailBacklinks = await joplin.settings.value('histTrailBacklinks');
   settings.trailLength = await joplin.settings.value('histTrailLength');
   settings.trailWidth = await joplin.settings.value('histTrailWidth');
   settings.trailColors = (await joplin.settings.value('histTrailColors')).split(',');
@@ -100,6 +102,14 @@ joplin.plugins.register({
         section: 'HistoryPanel',
         public: true,
         label: 'No. of trails levels to record in logs',
+      },
+
+      'histTrailBacklinks': {
+        value: settings.trailBacklinks,
+        type: SettingItemType.Bool,
+        section: 'HistoryPanel',
+        public: true,
+        label: 'Trails include backlinks',
       },
 
       'histTrailLength': {

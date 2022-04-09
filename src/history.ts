@@ -11,6 +11,7 @@ export interface HistSettings {
   panelFontSize: number;
   trailDisplay: number;
   trailRecords: number;
+  trailBacklinks: boolean;
   trailLength: number;
   trailWidth: number;
   trailColors: string[];
@@ -96,7 +97,7 @@ async function addTrailToItem(note: any, lines: string[], i: number,
       console.log('addTrailToItem: bad note');
     }
 
-    if (!skip && isLinked(note.body, note.id, item.body, item.id)) {
+    if (!skip && isLinked(item.body, item.id, note.body, note.id, params.trailBacklinks)) {
       let nextLevel: number;
       if (i == 1)
         nextLevel = 1;
@@ -201,11 +202,14 @@ function cleanOldHist(body: string, newItemDate: Date, maxHistDays: number): str
   return lines.slice(0, i+1).join('\n');
 }
 
-function isLinked(body1: string, id1: string, body2: string, id2: string): boolean {
+function isLinked(body1: string, id1: string, body2: string, id2: string, backlinks: boolean): boolean {
   // TODO: search only within links, if this is more efficient
   if (id1 == id2)
     return false;
-  return ((body1.search(':/' + id2) > 0) || (body2.search(':/' + id1) > 0));
+  let res = (body1.search(':/' + id2) > 0);
+  if (backlinks)
+    res = res || (body2.search(':/' + id1) > 0);
+  return res;
 }
 
 function setUnion(setA: Set<number>, setB: Set<number>): Set<number> {
