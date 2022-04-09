@@ -117,7 +117,7 @@ joplin.plugins.register({
         type: SettingItemType.Int,
         section: 'HistoryPanel',
         public: true,
-        label: 'Max trail length',
+        label: 'Max trail length (no. of items)',
       },
 
       'histTrailWidth': {
