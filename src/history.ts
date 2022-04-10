@@ -130,6 +130,9 @@ function formatItem(date: Date, title: string, id: string, trail: number[]): str
   return `${date.toISOString()} [${title}](:/${id})${trailString}`;
 }
 
+/**
+ * @returns [date, title, id, trail]
+ */
 export function parseItem(line: string): [Date, string, string, number[]] {
   const date = new Date(line.slice(0, 24));
 
@@ -142,7 +145,7 @@ export function parseItem(line: string): [Date, string, string, number[]] {
     id = noteMatch.groups.id;
   }
   if (title.length == 0)
-    console.log('bad parse, line=' + line)
+    console.log('parseItem: bad parse, line=' + line);
 
   let trail = [] as number[];
   const linkMatch = line.match(linkExp);
@@ -166,11 +169,11 @@ function cleanNewHist(body: string, newItemDate: Date, minSecBetweenItems: numbe
   const lastItemDate = new Date(body.slice(0, 24));
   if (newItemDate.getTime() - lastItemDate.getTime() >= 1000*minSecBetweenItems)
     return body;
-  // remove last item from history
-  const ind = body.search('\n');
-  body = cleanNewTrail(body).slice(ind+1);
 
-  return body;
+  // remove last item from history
+  body = cleanNewTrail(body);
+  const ind = body.search('\n');
+  return body.slice(ind+1);
 }
 
 function cleanNewTrail(body: string): string {
@@ -180,14 +183,22 @@ function cleanNewTrail(body: string): string {
     return body;
 
   const level = itemTrail[0];  // last item has at most one trail
+
+  if (level == 1) {
+    return body  // last line will be removed by calling function
+  }
+
   const lines = body.split('\n');
-  for (let i = 0; i <= lines.length; i++) {
-    const [itemDate, itemTitle, itemId, itemTrail] = parseItem(lines[i]);
+  for (let i = 0; i < lines.length; i++) {
     try {
-      lines[i] = formatItem(itemDate, itemTitle, itemId, 
-          itemTrail.splice(itemTrail.indexOf(level), 1));
+      const [itemDate, itemTitle, itemId, itemTrail] = parseItem(lines[i]);
+      const ind = itemTrail.indexOf(level)
+      if (ind < 0)  // once the trail ends
+        break
+      itemTrail.splice(ind, 1)
+      lines[i] = formatItem(itemDate, itemTitle, itemId, itemTrail);
     } catch {
-      console.log(`cleanNewTrail: failed to format date=${itemDate}\nwhen level=${level}\nline=${lines}`)
+      console.log(`cleanNewTrail: failed on line ${i}:\n${lines[i]}`);
     }
   }
   return lines.join('\n');
