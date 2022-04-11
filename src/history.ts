@@ -15,7 +15,13 @@ export interface HistSettings {
   trailLength: number;
   trailWidth: number;
   trailColors: string[];
+  trailFormat: trailFormat;
   userStyle: string;
+}
+
+export enum trailFormat {
+  'beforeTitle',
+  'afterTitle'
 }
 
 /**
@@ -48,7 +54,8 @@ export default async function addHistItem(params: HistSettings) {
     return
 
   if (params.secBetweenItems > 0)
-    histNote.body = cleanNewHist(histNote.body, date, params.secBetweenItems);
+    histNote.body = cleanNewHist(histNote.body, date,
+        params.secBetweenItems, params.trailFormat);
 
   if (params.maxDays > 0)
     histNote.body = cleanOldHist(histNote.body, date, params.maxDays);
@@ -58,9 +65,9 @@ export default async function addHistItem(params: HistSettings) {
     return
   }
 
-  histNote.body = await fixUntitledItem(histNote.body);
+  histNote.body = await fixUntitledItem(histNote.body, params.trailFormat);
 
-  const newItem = formatItem(date, note.title, note.id, []) + '\n';
+  const newItem = formatItem(date, note.title, note.id, [], params.trailFormat) + '\n';
   const lines = (newItem + histNote.body).split('\n');
   const processed = new Set() as Set<string>;
   await addTrailToItem(note, lines, 0, processed, new Set() as Set<number>, params);
@@ -117,17 +124,25 @@ async function addTrailToItem(note: any, lines: string[], i: number,
   const [foundLink, nextLevel] = await addTrailToItem(note, lines, i+1, processed, existLevels, params);
   if (foundLink){
     itemTrail.push(nextLevel);
-    lines[i] = formatItem(itemDate, itemTitle, itemId, itemTrail);
+    lines[i] = formatItem(itemDate, itemTitle, itemId, itemTrail, params.trailFormat);
   }
   return [foundLink, nextLevel];
 }
 
-function formatItem(date: Date, title: string, id: string, trail: number[]): string {
+function formatItem(date: Date, title: string, id: string, trail: number[],
+      trailFormat: number): string {
   let trailString = '';
+  trail = trail.sort();
+  if (trailFormat == 0)
+      trail = trail.reverse();
   if (trail.length > 0)
-    trailString = ` {${trail.sort().map(String).join(',')}}`;
+    trailString = ` {${trail.map(String).join(',')}}`;
 
-  return `${date.toISOString()} [${title}](:/${id})${trailString}`;
+  if (trailFormat == 0) {
+    return `${date.toISOString()}${trailString} [${title}](:/${id})`;
+  } else {
+    return `${date.toISOString()} [${title}](:/${id})${trailString}`;
+  }
 }
 
 /**
@@ -165,18 +180,19 @@ function isDuplicate(body: string, note: any, date: Date): boolean {
 /**
  * removes history items if they are too recent.
  */
-function cleanNewHist(body: string, newItemDate: Date, minSecBetweenItems: number): string {
+function cleanNewHist(body: string, newItemDate: Date, minSecBetweenItems: number,
+    trailFormat: number): string {
   const lastItemDate = new Date(body.slice(0, 24));
   if (newItemDate.getTime() - lastItemDate.getTime() >= 1000*minSecBetweenItems)
     return body;
 
   // remove last item from history
-  body = cleanNewTrail(body);
+  body = cleanNewTrail(body, trailFormat);
   const ind = body.search('\n');
   return body.slice(ind+1);
 }
 
-function cleanNewTrail(body: string): string {
+function cleanNewTrail(body: string, trailFormat: number): string {
   const ind = body.search('\n');
   const itemTrail = parseItem(body.slice(0, ind))[3];
   if (itemTrail.length == 0)
@@ -196,7 +212,7 @@ function cleanNewTrail(body: string): string {
       if (ind < 0)  // once the trail ends
         break
       itemTrail.splice(ind, 1)
-      lines[i] = formatItem(itemDate, itemTitle, itemId, itemTrail);
+      lines[i] = formatItem(itemDate, itemTitle, itemId, itemTrail, trailFormat);
     } catch {
       console.log(`cleanNewTrail: failed on line ${i}:\n${lines[i]}`);
     }
@@ -221,12 +237,12 @@ function cleanOldHist(body: string, newItemDate: Date, maxHistDays: number): str
  * if the last item is untitled, which happens in the case of a
  * newly created note, this function tries to update its title.
  */
- async function fixUntitledItem(body: string): Promise<string> {
+async function fixUntitledItem(body: string, trailFormat: number): Promise<string> {
   const ind = body.search('\n');
   let [itemDate, itemTitle, itemId, itemTrail] = parseItem(body.slice(0, ind));
   if (itemTitle == 'Untitled') {
     const note = await joplin.data.get(['notes', itemId], { fields: ['title'] });
-    body = formatItem(itemDate, note.title, itemId, itemTrail) + body.slice(ind);
+    body = formatItem(itemDate, note.title, itemId, itemTrail, trailFormat) + body.slice(ind);
   }
   return body
 }

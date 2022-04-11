@@ -1,6 +1,6 @@
 import joplin from 'api';
 import { SettingItemType, MenuItemLocation, ToolbarButtonLocation } from 'api/types';
-import addHistItem, { HistSettings } from './history';
+import addHistItem, { HistSettings, trailFormat } from './history';
 import updateHistView from './panel'
 
 const settings:HistSettings = {
@@ -15,6 +15,7 @@ const settings:HistSettings = {
   trailLength: 10,
   trailWidth: 20,
   trailColors: ['#e07a5f', '#81b29a', '#f2cc8f', '#6083c5', '#8e646b', '#858935'],
+  trailFormat: trailFormat.beforeTitle,
   userStyle: '',
 }
 
@@ -30,6 +31,7 @@ async function updateSettings() {
   settings.trailLength = await joplin.settings.value('histTrailLength');
   settings.trailWidth = await joplin.settings.value('histTrailWidth');
   settings.trailColors = (await joplin.settings.value('histTrailColors')).split(',');
+  settings.trailFormat = await joplin.settings.value('histTrailFormat');
   settings.userStyle = await joplin.settings.value('histUserStyle');
 };
 
@@ -135,6 +137,19 @@ joplin.plugins.register({
         public: true,
         label: 'Trails color map',
         description: 'Comma-separated colors'
+      },
+
+      'histTrailFormat': {
+        value: settings.trailFormat,
+        type: SettingItemType.Int,
+        section: 'HistoryPanel',
+        isEnum: true,
+        public: true,
+        label: 'Trail markdown format',
+        options: {
+          '0': 'Before note title',
+          '1': 'After note title',
+        }
       },
 
       'histUserStyle': {
