@@ -28,7 +28,6 @@ export enum trailFormat {
  * logs a new selected note in the history note.
  */
 export default async function addHistItem(params: HistSettings) {
-  // settings
   let note;
   try {
     note = await joplin.workspace.selectedNote();
@@ -68,10 +67,14 @@ export default async function addHistItem(params: HistSettings) {
   histNote.body = await fixUntitledItem(histNote.body, params.trailFormat);
 
   const newItem = formatItem(date, note.title, note.id, [], params.trailFormat) + '\n';
-  const lines = (newItem + histNote.body).split('\n');
-  const processed = new Set() as Set<string>;
-  await addTrailToItem(note, lines, 0, processed, new Set() as Set<number>, params);
-  histNote.body = lines.join('\n');
+  histNote.body = newItem + histNote.body;
+
+  if (params.trailRecords > 0) {
+    const lines = histNote.body.split('\n');
+    const processed = new Set() as Set<string>;
+    await addTrailToItem(note, lines, 0, processed, new Set() as Set<number>, params);
+    histNote.body = lines.join('\n');
+  }
 
   await joplin.data.put(['notes', histNote.id], null, { body: histNote.body});
 
