@@ -168,6 +168,7 @@ joplin.plugins.register({
       execute: async () => {
         const note = await joplin.workspace.selectedNote();
         await joplin.settings.setValue('histNoteId', note.id);
+        updateHistView(panel, settings);
       },
     });
 
