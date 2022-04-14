@@ -8,7 +8,7 @@ export interface HistSettings {
   secBetweenItems: number;
   maxDays: number;
   panelTitle: string;
-  panelFontSize: number;
+  panelTitleSize: number;
   trailDisplay: number;
   trailRecords: number;
   trailBacklinks: boolean;
@@ -17,12 +17,35 @@ export interface HistSettings {
   plotSize: number[];
   trailColors: string[];
   trailFormat: trailFormat;
+  freqLoc: freqLoc;
+  freqOpen: freqOpen;
+  freqDisplay: number;
+  freqScope: freqScope;
   userStyle: string;
 }
 
 export enum trailFormat {
   'beforeTitle',
-  'afterTitle'
+  'afterTitle',
+}
+
+export enum freqScope {
+  'today',
+  'week',
+  'month',
+  'year',
+  'all',
+}
+
+export enum freqLoc {
+  'top',
+  'bottom',
+  'hide',
+}
+
+export enum freqOpen {
+  'close',
+  'open',
 }
 
 /**
