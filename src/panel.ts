@@ -144,7 +144,7 @@ function getDateDay(date: Date): number {
 }
 
 function getMonthString(date: Date): string{
-  return date.toUTCString().split(' ')[2] + ' ' + date.toString().split(' ')[3]
+  return date.toUTCString().split(' ')[2] + ' ' + date.toUTCString().split(' ')[3]
 }
 
 // From https://stackoverflow.com/a/6234804/561309
