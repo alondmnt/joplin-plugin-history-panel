@@ -14,6 +14,7 @@ const settings:HistSettings = {
   trailBacklinks: true,
   trailLength: 10,
   trailWidth: 20,
+  plotSize: [20, 14],
   trailColors: ['#e07a5f', '#81b29a', '#f2cc8f', '#6083c5', '#8e646b', '#858935'],
   trailFormat: trailFormat.beforeTitle,
   userStyle: '',
@@ -30,6 +31,7 @@ async function updateSettings() {
   settings.trailBacklinks = await joplin.settings.value('histTrailBacklinks');
   settings.trailLength = await joplin.settings.value('histTrailLength');
   settings.trailWidth = await joplin.settings.value('histTrailWidth');
+  settings.plotSize = [settings.trailWidth, 14];  // 'calc(var(--joplin-font-size) + 2px)'
   settings.trailColors = (await joplin.settings.value('histTrailColors')).split(',');
   settings.trailFormat = await joplin.settings.value('histTrailFormat');
   settings.userStyle = await joplin.settings.value('histUserStyle');

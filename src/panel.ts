@@ -10,16 +10,19 @@ async function getItemHtml(params: HistSettings): Promise<string> {
     return 'Please set a history note (from the Tools menu) to start logging';
   }
 
-  const itemHtml = [];
+  const itemHtml: string[] = [];
   let foldTag: string;
   let plotTag: string;
   const dateScope = new Set(['today']);
   const activeTrail = new Set() as Set<number>;
+  let noteCounter = new Map<string, number>();
+  let noteMap = new Map<string, string>();
 
   for (const line of histNote.body.split('\n')) {
     const [noteDate, noteTitle, noteId, noteTrail] = parseItem(line);
     foldTag = getFoldTag(now, noteDate, dateScope);
     plotTag = getPlotTag(noteTrail, activeTrail, params);
+    updateStats(noteId, noteTitle, noteCounter, noteMap, dateScope, params);
 
     itemHtml.push(`
             ${foldTag}
@@ -31,7 +34,9 @@ async function getItemHtml(params: HistSettings): Promise<string> {
             </p>
           `);
   }
-  return itemHtml.join('\n');
+  const statsHtml = getStatsHtml(noteCounter, noteMap, params);
+
+  return itemHtml.join('\n') + statsHtml;
 }
 
 function getFoldTag(now: Date, noteDate: Date, dateScope: Set<string>): string {
@@ -60,14 +65,13 @@ function getFoldTag(now: Date, noteDate: Date, dateScope: Set<string>): string {
 }
 
 function getPlotTag(trail: number[], activeTrail: Set<number>, params: HistSettings): string {
-  const plotSize = [params.trailWidth, 14];  // 'calc(var(--joplin-font-size) + 2px)'
-  const yDot = plotSize[1] / 2;  // connector pos
+  const yDot = params.plotSize[1] / 2;  // connector pos
   const rDotMax = 0.5*params.trailDisplay + 2;
-  const xBase = plotSize[0] - rDotMax;
-  const yControl = plotSize[1] / 2;
-  let plot = `<svg class="hist-plot" style="width: ${params.trailWidth}px">`;
+  const xBase = params.plotSize[0] - rDotMax;
+  const yControl = params.plotSize[1] / 2;
+  let plot = `<svg class="hist-plot" style="width: ${params.plotSize[0]}px">`;
 
-  for (let i = 1; i <= params.trailDisplay; i++){
+  for (let i = 1; i <= params.trailDisplay; i++) {
     const color = params.trailColors[(i-1) % params.trailColors.length];
     const xLevel = xBase * (1 - (i-1)/(params.trailDisplay));
     const rLevel = rDotMax - (i-1)/2;
@@ -75,13 +79,13 @@ function getPlotTag(trail: number[], activeTrail: Set<number>, params: HistSetti
     if (trail.includes(i)) {
       if (activeTrail.has(i))  // continue trail
         plot += `
-            <line x1="${xLevel}" y1="0" x2="${xLevel}" y2="${plotSize[1]}"
+            <line x1="${xLevel}" y1="0" x2="${xLevel}" y2="${params.plotSize[1]}"
               style="stroke:${color};" />
           `;
       else {  // start trail
         activeTrail.add(i);
         plot += `
-          <path d="M ${xBase} ${yDot} C ${xBase} ${yControl}, ${xLevel} ${yControl}, ${xLevel} ${plotSize[1]}"
+          <path d="M ${xBase} ${yDot} C ${xBase} ${yControl}, ${xLevel} ${yControl}, ${xLevel} ${params.plotSize[1]}"
             stroke="${color}" fill="none" />
           <circle cx="${xBase}" cy="${yDot}" r="${rLevel}"
             stroke="none" fill="${color}" />
@@ -98,6 +102,41 @@ function getPlotTag(trail: number[], activeTrail: Set<number>, params: HistSetti
     }
   }
   return plot + '</svg>';
+}
+
+function updateStats(noteId: string, noteTitle: string, noteCounter: Map<string, number>,
+    noteMap: Map<string, string>, dateScope: Set<string>, params: HistSettings) {
+  if (!dateScope.has('yesterday') && !dateScope.has('week')) {
+    if (!noteCounter.has(noteId)) {
+      noteCounter.set(noteId, 0);
+      noteMap.set(noteId, noteTitle);
+    }
+    noteCounter.set(noteId, noteCounter.get(noteId) + 1);
+  }
+}
+
+function getStatsHtml(noteCounter: Map<string, number>,
+      noteMap: Map<string, string>, params: HistSettings): string {
+  const maxR = 5;  // px
+  const itemHtml: string[] = [];
+  const noteOrder = new Map([...noteCounter.entries()].sort((a, b) => b[1] - a[1]));
+  const maxCount = Math.max(...noteCounter.values());
+
+  itemHtml.push('</details><details class="hist-section" open><summary class="hist-section">Frequent</summary>');
+  noteOrder.forEach( (count, id) => {
+    itemHtml.push(`
+      <p class="hist-item">
+      <svg class="hist-plot" style="width: ${params.plotSize[0]}px">
+      <circle cx="${params.plotSize[0] / 2}" cy="${params.plotSize[1] / 2}" r="${maxR*count/maxCount}"
+        stroke="none" fill="${params.trailColors[0]}" />
+      </svg>
+      <a class="hist-item" href="#" data-slug="${id}">
+        ${escapeHtml(`${noteMap.get(id)}`)}
+      </a>
+      </p>
+    `);
+  });
+  return itemHtml.join('\n');
 }
 
 function getDateDay(date: Date): number {

@@ -14,6 +14,7 @@ export interface HistSettings {
   trailBacklinks: boolean;
   trailLength: number;
   trailWidth: number;
+  plotSize: number[];
   trailColors: string[];
   trailFormat: trailFormat;
   userStyle: string;
