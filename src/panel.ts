@@ -41,7 +41,6 @@ async function getItemHtml(params: HistSettings): Promise<string> {
   let statsHtml = '';
   if (params.freqLoc != freqLoc.hide)
     statsHtml = getStatsHtml(noteCounter, noteMap, params);
-  console.log(noteCounter);
 
   let allHtml = '';
   if (params.freqLoc == freqLoc.top)
@@ -147,7 +146,8 @@ function updateStats(noteId: string, noteTitle: string, noteDate: Date,
 
 function getStatsHtml(noteCounter: Map<string, number>,
       noteMap: Map<string, string>, params: HistSettings): string {
-  const maxR = 5;  // px
+  const maxR = 0.8*params.plotSize[1] / 2;  // px, leaving 10% margin
+  const minR = 1;
   const itemHtml: string[] = [];
   const noteOrder = new Map([...noteCounter.entries()].sort((a, b) => b[1] - a[1]));
   const maxCount = Math.max(...noteCounter.values());
@@ -162,11 +162,12 @@ function getStatsHtml(noteCounter: Map<string, number>,
     i += 1;
     if (i > params.freqDisplay)
       return
+    const r = Math.max(minR, maxR * count / maxCount);
     itemHtml.push(`
       <p class="hist-item">
       <svg class="hist-plot" style="width: ${params.plotSize[0]}px">
-      <circle cx="${params.plotSize[0] / 2}" cy="${params.plotSize[1] / 2}" r="${maxR*count/maxCount}"
-        stroke="none" fill="${params.trailColors[0]}" />
+      <circle cx="${0.9*params.plotSize[0] - maxR}" cy="${params.plotSize[1] / 2}" r="${r}"
+            stroke="none" fill="${params.trailColors[0]}" />
       </svg>
       <a class="hist-item" href="#" data-slug="${id}">
         ${escapeHtml(`${noteMap.get(id)}`)}
