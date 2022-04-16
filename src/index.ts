@@ -8,13 +8,15 @@ const settings: HistSettings = {
   secBetweenItems: 0,
   maxDays: 90,
   panelTitle: 'HISTORY',
-  panelTitleSize: 10,
+  panelTitleSize: 13,
+  panelTextSize: 12,
+  panelTextSpace: 4,
   trailDisplay: 3,
   trailRecords: 6,
   trailBacklinks: true,
   trailLength: 10,
   trailWidth: 20,
-  plotSize: [20, 14],
+  plotSize: [20, 16],
   trailColors: ['#e07a5f', '#81b29a', '#f2cc8f', '#6083c5', '#8e646b', '#858935'],
   trailFormat: trailFormat.beforeTitle,
   freqDisplay: 5,
@@ -30,12 +32,14 @@ async function updateSettings() {
   settings.maxDays = await joplin.settings.value('histMaxDays');
   settings.panelTitle = await joplin.settings.value('histPanelTitle');
   settings.panelTitleSize = await joplin.settings.value('histPanelTitleSize');
+  settings.panelTextSize = await joplin.settings.value('histPanelTextSize');
   settings.trailDisplay = await joplin.settings.value('histTrailDisplay');
   settings.trailRecords = await joplin.settings.value('histTrailRecords');
   settings.trailBacklinks = await joplin.settings.value('histTrailBacklinks');
   settings.trailLength = await joplin.settings.value('histTrailLength');
   settings.trailWidth = await joplin.settings.value('histTrailWidth');
-  settings.plotSize = [settings.trailWidth, 14];  // 'calc(var(--joplin-font-size) + 2px)'
+  settings.plotSize = [settings.trailWidth,
+      settings.panelTextSize + settings.panelTextSpace];
   settings.trailColors = (await joplin.settings.value('histTrailColors')).split(',');
   settings.trailFormat = await joplin.settings.value('histTrailFormat');
   settings.freqDisplay = await joplin.settings.value('histFreqDisplay');
@@ -96,7 +100,15 @@ joplin.plugins.register({
         type: SettingItemType.Int,
         section: 'HistoryPanel',
         public: true,
-        label: 'Panel: title font size',
+        label: 'Panel: title font size (px)',
+      },
+
+      'histPanelTextSize': {
+        value: settings.panelTextSize,
+        type: SettingItemType.Int,
+        section: 'HistoryPanel',
+        public: true,
+        label: 'Panel: text font size (px)',
       },
 
       'histTrailDisplay': {

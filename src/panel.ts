@@ -10,7 +10,7 @@ async function getItemHtml(params: HistSettings): Promise<string> {
   }
 
   const itemHtml: string[] = [];
-  itemHtml.push('<details open class="hist-section"><summary class="hist-section">Today</summary>');
+  itemHtml.push(`<details open class="hist-section"><summary class="hist-section" style="font-size: ${params.panelTextSize}px">Today</summary>`);
 
   let foldTag: string;
   let plotTag: string;
@@ -21,14 +21,14 @@ async function getItemHtml(params: HistSettings): Promise<string> {
 
   for (const line of histNote.body.split('\n')) {
     const [noteDate, noteTitle, noteId, noteTrail] = parseItem(line);
-    foldTag = getFoldTag(noteDate, dateScope);
+    foldTag = getFoldTag(noteDate, dateScope, params.panelTextSize);
     plotTag = getPlotTag(noteTrail, activeTrail, params);
     if (params.freqLoc != freqLoc.hide)
       updateStats(noteId, noteTitle, noteDate, noteCounter, noteMap, dateScope, params);
 
     itemHtml.push(`
             ${foldTag}
-            <p class="hist-item">
+            <p class="hist-item" style="font-size: ${params.panelTextSize}px; height: ${params.plotSize[1]}px">
               ${plotTag}
               <a class="hist-item" href="#" data-slug="${noteId}">
                 ${escapeHtml(noteTitle)}
@@ -52,19 +52,19 @@ async function getItemHtml(params: HistSettings): Promise<string> {
   return allHtml
 }
 
-function getFoldTag(noteDate: Date, dateScope: Set<string>): string {
+function getFoldTag(noteDate: Date, dateScope: Set<string>, fontSize: number): string {
   /* whenever we pass a threshold, we need to close the previous folding section
      and start a new one */
   const now = new Date();
   const dayDiff = getDateDay(now) - getDateDay(noteDate);
   if (!dateScope.has('yesterday') && (dayDiff == 1)) {
     dateScope.add('yesterday');
-    return '</details><details class="hist-section"><summary class="hist-section">Yesterday</summary>';
+    return `</details><details class="hist-section"><summary class="hist-section" style="font-size: ${fontSize}px">Yesterday</summary>`;
   }
   if (!dateScope.has('week') &&
       (dayDiff > 1) && (dayDiff <= 6)) {
     dateScope.add('week');
-    return '</details><details class="hist-section"><summary class="hist-section">Last 7 days</summary>';
+    return `</details><details class="hist-section"><summary class="hist-section" style="font-size: ${fontSize}px">Last 7 days</summary>`;
   }
 
   let strMonth = getMonthString(noteDate);
@@ -72,7 +72,7 @@ function getFoldTag(noteDate: Date, dateScope: Set<string>): string {
     strMonth = 'This month';
   if (!dateScope.has(strMonth) && (dayDiff > 6)) {
     dateScope.add(strMonth);
-    return `</details><details class="hist-section"><summary class="hist-section">${strMonth}</summary>`;
+    return `</details><details class="hist-section"><summary class="hist-section" style="font-size: ${fontSize}px">${strMonth}</summary>`;
   }
 
   return '';
@@ -82,8 +82,8 @@ function getPlotTag(trail: number[], activeTrail: Set<number>, params: HistSetti
   const yDot = params.plotSize[1] / 2;  // connector pos
   const rDotMax = 0.5*params.trailDisplay + 2;
   const xBase = params.plotSize[0] - rDotMax;
-  const yControl = params.plotSize[1] / 2;
-  let plot = `<svg class="hist-plot" style="width: ${params.plotSize[0]}px">`;
+  const yControl = yDot;
+  let plot = `<svg class="hist-plot" style="width: ${params.plotSize[0]}px; height: ${params.plotSize[1]}px">`;
 
   for (let i = 1; i <= params.trailDisplay; i++) {
     const color = params.trailColors[(i-1) % params.trailColors.length];
@@ -146,7 +146,7 @@ function updateStats(noteId: string, noteTitle: string, noteDate: Date,
 
 function getStatsHtml(noteCounter: Map<string, number>,
       noteMap: Map<string, string>, params: HistSettings): string {
-  const maxR = 0.8*params.plotSize[1] / 2;  // px, leaving 10% margin
+  const maxR = 0.9*Math.min(params.panelTextSize, params.plotSize[0]) / 2;  // px, leaving 10% margin
   const minR = 1;
   const itemHtml: string[] = [];
   const noteOrder = new Map([...noteCounter.entries()].sort((a, b) => b[1] - a[1]));
@@ -155,7 +155,10 @@ function getStatsHtml(noteCounter: Map<string, number>,
   let strOpen = '';
   if (params.freqOpen == freqOpen.open)
     strOpen = ' open';
-  itemHtml.push(`<details class="hist-section"${strOpen}><summary class="hist-section">Frequent notes</summary>`);
+  itemHtml.push(`
+    <details class="hist-section"${strOpen}>
+      <summary class="hist-section" style="font-size: ${params.panelTextSize}px">
+      Frequent notes</summary>`);
 
   let i = 0;
   noteOrder.forEach( (count, id) => {
@@ -164,9 +167,10 @@ function getStatsHtml(noteCounter: Map<string, number>,
       return
     const r = Math.max(minR, maxR * count / maxCount);
     itemHtml.push(`
-      <p class="hist-item">
-      <svg class="hist-plot" style="width: ${params.plotSize[0]}px">
-      <circle cx="${0.9*params.plotSize[0] - maxR}" cy="${params.plotSize[1] / 2}" r="${r}"
+      <p class="hist-item" style="font-size: ${params.panelTextSize}px; height: ${params.plotSize[1]}px">
+      <svg class="hist-plot" style="width: ${params.plotSize[0]}px; height: ${params.plotSize[1]}px">
+        <circle r="${r}" cx="${0.9*params.plotSize[0] - maxR}"
+            cy="${params.plotSize[1] / 2}"
             stroke="none" fill="${params.trailColors[0]}" />
       </svg>
       <a class="hist-item" href="#" data-slug="${id}">
@@ -214,7 +218,10 @@ export default async function updateHistView(panel:string, params: HistSettings)
   ${params.userStyle}
   </style>
   <div class="container">
-    <p class="hist-title"><a class="hist-title" href="#" data-slug="${params.histNoteId}" style="font-size:${params.panelTitleSize}pt">${params.panelTitle}</a></p>
+    <p class="hist-title">
+      <a class="hist-title" href="#" data-slug="${params.histNoteId}"
+        style="font-size:${params.panelTitleSize}px">
+        ${params.panelTitle}</a></p>
     ${itemHtml}
   </div>
   `);

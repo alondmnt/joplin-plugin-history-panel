@@ -9,6 +9,8 @@ export interface HistSettings {
   maxDays: number;
   panelTitle: string;
   panelTitleSize: number;
+  panelTextSize: number;
+  panelTextSpace: number;
   trailDisplay: number;
   trailRecords: number;
   trailBacklinks: boolean;
