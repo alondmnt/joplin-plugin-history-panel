@@ -255,11 +255,19 @@ joplin.plugins.register({
 
     await joplin.settings.onChange(async () => {
       await updateSettings();
-      updateHistView(panel, settings);
+      const vis = await joplin.views.panels.visible(panel);
+      if (vis)
+        updateHistView(panel, settings);
     });
 
     await joplin.workspace.onNoteSelectionChange(async () => {
       await addHistItem(settings);
+      const vis = await joplin.views.panels.visible(panel);
+      if (vis)
+        updateHistView(panel, settings);
+    });
+
+    await joplin.workspace.onSyncComplete(async () =>  {
       const vis = await joplin.views.panels.visible(panel);
       if (vis)
         updateHistView(panel, settings);
