@@ -127,7 +127,7 @@ async function addTrailToItem(note: any, lines: string[], i: number,
   if ((i > 1) && (nl > params.trailRecords))
     return [false, nl];  // link not found
 
-  if (!processed.has(itemId)){
+  if ((i > 0) && !processed.has(itemId)){
     let skip = false;
     let item;
     try {
@@ -277,9 +277,8 @@ async function fixUntitledItem(body: string, trailFormat: number): Promise<strin
 }
 
 function isLinked(body1: string, id1: string, body2: string, id2: string, backlinks: boolean): boolean {
-  // TODO: search only within links, if this is more efficient
   if (id1 == id2)
-    return false;
+    return true;
   let res = (body1.search(':/' + id2) > 0);
   if (backlinks)
     res = res || (body2.search(':/' + id1) > 0);
