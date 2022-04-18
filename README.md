@@ -7,6 +7,7 @@ Discussion: https://discourse.joplinapp.org/t/plugin-the-history-panel/24705
 - Saves your Joplin note browsing history in a Joplin note.
 - Displays note history in a dedicated panel.
 - Displays links between history items in a "thought trails" view.
+- Displays frequently visited notes.
 
 ## Preview
 
