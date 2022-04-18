@@ -1,5 +1,6 @@
 import joplin from 'api';
-import { HistSettings, parseItem, freqScope, freqLoc, freqOpen } from './history';
+import { parseItem } from './history';
+import { HistSettings, freqScope, freqLoc, freqOpen } from './settings';
 
 async function getItemHtml(params: HistSettings): Promise<string> {
   let histNote;

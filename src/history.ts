@@ -1,54 +1,8 @@
 import joplin from 'api';
+import { HistSettings } from './settings';
 
 const linkExp = new RegExp(/{(.*?)}/g);
 const noteExp = new RegExp(/\[(?<title>[^\[]+)\]\(:\/(?<id>.*)\)/g);
-
-export interface HistSettings {
-  histNoteId: string;
-  secBetweenItems: number;
-  maxDays: number;
-  panelTitle: string;
-  panelTitleSize: number;
-  panelTextSize: number;
-  panelTextSpace: number;
-  trailDisplay: number;
-  trailRecords: number;
-  trailBacklinks: boolean;
-  trailLength: number;
-  trailWidth: number;
-  plotSize: number[];
-  trailColors: string[];
-  trailFormat: trailFormat;
-  freqLoc: freqLoc;
-  freqOpen: freqOpen;
-  freqDisplay: number;
-  freqScope: freqScope;
-  userStyle: string;
-}
-
-export enum trailFormat {
-  'beforeTitle',
-  'afterTitle',
-}
-
-export enum freqScope {
-  'today',
-  'week',
-  'month',
-  'year',
-  'all',
-}
-
-export enum freqLoc {
-  'top',
-  'bottom',
-  'hide',
-}
-
-export enum freqOpen {
-  'close',
-  'open',
-}
 
 /**
  * logs a new selected note in the history note.
