@@ -7,6 +7,7 @@ import updateHistView from './panel'
 
 const settings: HistSettings = {
   histNoteId: '',
+  excludeNotes: new Set() as Set<string>,
   secBetweenItems: 0,
   maxDays: 90,
   panelTitle: 'HISTORY',
@@ -53,7 +54,45 @@ joplin.plugins.register({
       },
     });
 
-    await joplin.views.menuItems.create('menuHistNote', 'setHistNote', MenuItemLocation.Tools);
+    await joplin.commands.register({
+      name: 'setHistExclude',
+      label: 'Exclude note from history',
+      execute: async () => {
+        const note = await joplin.workspace.selectedNote();
+        if (note == undefined) return;
+
+        settings.excludeNotes.delete('');
+        settings.excludeNotes.add(note.id);
+        await joplin.settings.setValue('histExcludeNotes', Array(...settings.excludeNotes).toString())
+      },
+    });
+
+    await joplin.commands.register({
+      name: 'setHistInclude',
+      label: 'Include note in history (un-exclude)',
+      execute: async () => {
+        const note = await joplin.workspace.selectedNote();
+        if (note == undefined) return;
+
+        settings.excludeNotes.delete(note.id);
+        await joplin.settings.setValue('histExcludeNotes', Array(...settings.excludeNotes).toString())
+      },
+    });
+
+    await joplin.views.menus.create('histMenu', 'History', [
+      {
+        label: 'menuHistNote',
+        commandName: 'setHistNote',
+      },
+      {
+        label: 'menuHistExclude',
+        commandName: 'setHistExclude',
+      },
+      {
+        label: 'menuHistInclude',
+        commandName: 'setHistInclude',
+      },
+    ], MenuItemLocation.Tools);
 
     await joplin.commands.register({
       name: 'toggleHistPanel',

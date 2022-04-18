@@ -1,4 +1,5 @@
 import joplin from 'api';
+import { settings } from 'cluster';
 import { HistSettings } from './settings';
 
 const linkExp = new RegExp(/{(.*?)}/g);
@@ -18,7 +19,7 @@ export default async function addHistItem(params: HistSettings) {
     console.log('addHistItem: failed to get selected note');
     return;
   }
-  if (note.id == params.histNoteId) return;
+  if ((note.id == params.histNoteId) || params.excludeNotes.has(note.id)) return;
 
   let histNote;
   try {

@@ -3,6 +3,7 @@ import { SettingItem, SettingItemType } from 'api/types';
 
 export interface HistSettings {
   histNoteId: string;
+  excludeNotes: Set<string>;
   secBetweenItems: number;
   maxDays: number;
   panelTitle: string;
@@ -23,7 +24,7 @@ export interface HistSettings {
   freqScope: freqScope;
   userStyle: string;
   }
-  
+
 export enum trailFormat {
   'beforeTitle',
   'afterTitle',
@@ -47,9 +48,10 @@ export enum freqOpen {
   'close',
   'open',
 }
-  
+
 export async function updateSettings(settings) {
   settings.histNoteId = await joplin.settings.value('histNoteId');
+  settings.excludeNotes = new Set((await joplin.settings.value('histExcludeNotes')).split(','));
   settings.secBetweenItems = await joplin.settings.value('histSecBetweenItems');
   settings.maxDays = await joplin.settings.value('histMaxDays');
   settings.panelTitle = await joplin.settings.value('histPanelTitle');
@@ -73,14 +75,6 @@ export async function updateSettings(settings) {
 
 export function getSettingsSection(settings): Record<string, SettingItem> {
   return {
-    'histNoteId': {
-      value: settings.histNoteId,
-      type: SettingItemType.String,
-      section: 'HistoryPanel',
-      public: true,
-      label: 'History: Note ID',
-    },
-
     'histSecBetweenItems': {
       value: settings.secBetweenItems,
       type: SettingItemType.Int,
@@ -174,15 +168,6 @@ export function getSettingsSection(settings): Record<string, SettingItem> {
       label: 'Trails: Plot width (px)',
     },
 
-    'histTrailColors': {
-      value: settings.trailColors.join(','),
-      type: SettingItemType.String,
-      section: 'HistoryPanel',
-      public: true,
-      label: 'Trails: Color map',
-      description: 'Comma-separated colors'
-    },
-
     'histTrailFormat': {
       value: settings.trailFormat,
       type: SettingItemType.Int,
@@ -249,12 +234,42 @@ export function getSettingsSection(settings): Record<string, SettingItem> {
       }
     },
 
+    'histNoteId': {
+      advanced: true,
+      value: settings.histNoteId,
+      type: SettingItemType.String,
+      section: 'HistoryPanel',
+      public: true,
+      label: 'History: Note ID',
+    },
+
+    'histExcludeNotes': {
+      advanced: true,
+      value: Array(...settings.excludeNotes).toString(),
+      type: SettingItemType.String,
+      section: 'HistoryPanel',
+      public: true,
+      label: 'History: Excluded notes',
+      description: 'Comma-separated note IDs. Use Tools->History->Exclude note from history.'
+    },
+
+    'histTrailColors': {
+      advanced: true,
+      value: settings.trailColors.join(','),
+      type: SettingItemType.String,
+      section: 'HistoryPanel',
+      public: true,
+      label: 'Trails: Color map',
+      description: 'Comma-separated colors'
+    },
+
     'histUserStyle': {
+      advanced: true,
       value: settings.userStyle,
       type: SettingItemType.String,
       section: 'HistoryPanel',
       public: true,
-      label: 'Panel stylesheet',
+      label: 'Panel: Stylesheet',
     },
   }
 }
