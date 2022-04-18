@@ -78,7 +78,7 @@ export function getSettingsSection(settings): Record<string, SettingItem> {
       type: SettingItemType.String,
       section: 'HistoryPanel',
       public: true,
-      label: 'History: note ID',
+      label: 'History: Note ID',
     },
 
     'histSecBetweenItems': {
@@ -103,7 +103,7 @@ export function getSettingsSection(settings): Record<string, SettingItem> {
       type: SettingItemType.String,
       section: 'HistoryPanel',
       public: true,
-      label: 'Panel: title',
+      label: 'Panel: Title',
     },
 
     'histPanelTitleSize': {
@@ -111,7 +111,7 @@ export function getSettingsSection(settings): Record<string, SettingItem> {
       type: SettingItemType.Int,
       section: 'HistoryPanel',
       public: true,
-      label: 'Panel: title font size (px)',
+      label: 'Panel: Title font size (px)',
     },
 
     'histPanelTextSize': {
@@ -119,7 +119,7 @@ export function getSettingsSection(settings): Record<string, SettingItem> {
       type: SettingItemType.Int,
       section: 'HistoryPanel',
       public: true,
-      label: 'Panel: text font size (px)',
+      label: 'Panel: Text font size (px)',
     },
 
     'histTrailDisplay': {
@@ -144,7 +144,7 @@ export function getSettingsSection(settings): Record<string, SettingItem> {
       type: SettingItemType.Bool,
       section: 'HistoryPanel',
       public: true,
-      label: 'Trails: include backlinks',
+      label: 'Trails: Include backlinks',
     },
 
     'histTrailLength': {
@@ -160,7 +160,7 @@ export function getSettingsSection(settings): Record<string, SettingItem> {
       type: SettingItemType.Int,
       section: 'HistoryPanel',
       public: true,
-      label: 'Trails: plot width (px)',
+      label: 'Trails: Plot width (px)',
     },
 
     'histTrailColors': {
@@ -168,7 +168,7 @@ export function getSettingsSection(settings): Record<string, SettingItem> {
       type: SettingItemType.String,
       section: 'HistoryPanel',
       public: true,
-      label: 'Trails: color map',
+      label: 'Trails: Color map',
       description: 'Comma-separated colors'
     },
 
@@ -178,7 +178,7 @@ export function getSettingsSection(settings): Record<string, SettingItem> {
       section: 'HistoryPanel',
       isEnum: true,
       public: true,
-      label: 'Trails: markdown format',
+      label: 'Trails: Markdown format',
       options: {
         '0': 'Before note title',
         '1': 'After note title',
@@ -191,7 +191,7 @@ export function getSettingsSection(settings): Record<string, SettingItem> {
       section: 'HistoryPanel',
       isEnum: true,
       public: true,
-      label: 'Frequent notes: location',
+      label: 'Frequent notes: Location',
       options: {
         '0': 'Top of panel',
         '1': 'Bottom of panel',
@@ -205,7 +205,7 @@ export function getSettingsSection(settings): Record<string, SettingItem> {
       section: 'HistoryPanel',
       isEnum: true,
       public: true,
-      label: 'Frequent notes: panel section default state',
+      label: 'Frequent notes: Panel section default state',
       options: {
         '0': 'Closed',
         '1': 'Open',
@@ -217,7 +217,7 @@ export function getSettingsSection(settings): Record<string, SettingItem> {
       type: SettingItemType.Int,
       section: 'HistoryPanel',
       public: true,
-      label: 'Frequent notes: no. of items',
+      label: 'Frequent notes: No. of items',
     },
 
     'histFreqScope': {
@@ -226,7 +226,7 @@ export function getSettingsSection(settings): Record<string, SettingItem> {
       section: 'HistoryPanel',
       isEnum: true,
       public: true,
-      label: 'Frequent notes: statistics time period',
+      label: 'Frequent notes: Statistics time period',
       options: {
         '0': 'Today',
         '1': 'Last 7 days',
