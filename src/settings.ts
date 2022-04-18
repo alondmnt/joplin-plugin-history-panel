@@ -84,6 +84,7 @@ export function getSettingsSection(settings): Record<string, SettingItem> {
     'histSecBetweenItems': {
       value: settings.secBetweenItems,
       type: SettingItemType.Int,
+      minimum: 0,
       section: 'HistoryPanel',
       public: true,
       label: 'History: Min seconds between items',
@@ -92,6 +93,7 @@ export function getSettingsSection(settings): Record<string, SettingItem> {
     'histMaxDays': {
       value: settings.maxDays,
       type: SettingItemType.Int,
+      minimum: 0,
       section: 'HistoryPanel',
       public: true,
       label: 'History: Days of history to keep',
@@ -109,6 +111,7 @@ export function getSettingsSection(settings): Record<string, SettingItem> {
     'histPanelTitleSize': {
       value: settings.panelTitleSize,
       type: SettingItemType.Int,
+      minimum: 1,
       section: 'HistoryPanel',
       public: true,
       label: 'Panel: Title font size (px)',
@@ -117,6 +120,7 @@ export function getSettingsSection(settings): Record<string, SettingItem> {
     'histPanelTextSize': {
       value: settings.panelTextSize,
       type: SettingItemType.Int,
+      minimum: 1,
       section: 'HistoryPanel',
       public: true,
       label: 'Panel: Text font size (px)',
@@ -125,6 +129,8 @@ export function getSettingsSection(settings): Record<string, SettingItem> {
     'histTrailDisplay': {
       value: settings.trailDisplay,
       type: SettingItemType.Int,
+      minimum: 0,
+      maximum: 10,
       section: 'HistoryPanel',
       public: true,
       label: 'Trails: No. of trails (note links) levels to display',
@@ -134,6 +140,8 @@ export function getSettingsSection(settings): Record<string, SettingItem> {
     'histTrailRecords': {
       value: settings.trailRecords,
       type: SettingItemType.Int,
+      minimum: 0,
+      maximum: 10,
       section: 'HistoryPanel',
       public: true,
       label: 'Trails: No. of trails levels to record in logs',
@@ -150,6 +158,8 @@ export function getSettingsSection(settings): Record<string, SettingItem> {
     'histTrailLength': {
       value: settings.trailLength,
       type: SettingItemType.Int,
+      minimum: 0,
+      maximum: 100,
       section: 'HistoryPanel',
       public: true,
       label: 'Trails: Max trail length (no. of items)',
@@ -158,6 +168,7 @@ export function getSettingsSection(settings): Record<string, SettingItem> {
     'histTrailWidth': {
       value: settings.trailWidth,
       type: SettingItemType.Int,
+      minimum: 0,
       section: 'HistoryPanel',
       public: true,
       label: 'Trails: Plot width (px)',
@@ -214,6 +225,8 @@ export function getSettingsSection(settings): Record<string, SettingItem> {
 
     'histFreqDisplay': {
       value: settings.freqDisplay,
+      minimum: 0,
+      maximum: 100,
       type: SettingItemType.Int,
       section: 'HistoryPanel',
       public: true,
