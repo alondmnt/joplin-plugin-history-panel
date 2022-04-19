@@ -49,7 +49,7 @@ export enum freqOpen {
   'open',
 }
 
-export async function updateSettings(settings) {
+export async function updateSettings(settings: HistSettings) {
   settings.histNoteId = await joplin.settings.value('histNoteId');
   settings.excludeNotes = new Set((await joplin.settings.value('histExcludeNotes')).split(','));
   settings.secBetweenItems = await joplin.settings.value('histSecBetweenItems');
@@ -73,7 +73,7 @@ export async function updateSettings(settings) {
   settings.userStyle = await joplin.settings.value('histUserStyle');
 };
 
-export function getSettingsSection(settings): Record<string, SettingItem> {
+export function getSettingsSection(settings: HistSettings): Record<string, SettingItem> {
   return {
     'histSecBetweenItems': {
       value: settings.secBetweenItems,
