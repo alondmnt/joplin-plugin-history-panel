@@ -1,6 +1,6 @@
 import joplin from 'api';
 import { MenuItemLocation, ToolbarButtonLocation } from 'api/types';
-import addHistItem from './history';
+import addHistItem, { HistState } from './history';
 import { HistSettings, getSettingsSection, updateSettings,
     trailFormat, freqOpen, freqLoc, freqScope } from './settings'
 import updateHistView from './panel'
@@ -29,6 +29,13 @@ const settings: HistSettings = {
   userStyle: '',
 }
 
+const state: HistState = {
+  cacheHist: [],
+  cacheHtml: [],
+  cacheCounter: new Map<string, number>(),
+  newItems: 0,
+}
+
 joplin.plugins.register({
   onStart: async function() {
     const panel = await joplin.views.panels.create('history');
@@ -50,7 +57,7 @@ joplin.plugins.register({
       execute: async () => {
         const note = await joplin.workspace.selectedNote();
         await joplin.settings.setValue('histNoteId', note.id);
-        updateHistView(panel, settings);
+        updateHistView(panel, settings, state);
       },
     });
 
@@ -103,7 +110,7 @@ joplin.plugins.register({
         if (vis)
           joplin.views.panels.hide(panel);
         else{
-          updateHistView(panel, settings);
+          updateHistView(panel, settings, state);
           joplin.views.panels.show(panel);
         }
       },
@@ -116,20 +123,20 @@ joplin.plugins.register({
       await updateSettings(settings);
       const vis = await joplin.views.panels.visible(panel);
       if (vis)
-        updateHistView(panel, settings);
+        updateHistView(panel, settings, state);
     });
 
     await joplin.workspace.onNoteSelectionChange(async () => {
-      await addHistItem(settings);
+      await addHistItem(settings, state);
       const vis = await joplin.views.panels.visible(panel);
       if (vis)
-        updateHistView(panel, settings);
+        updateHistView(panel, settings, state);
     });
 
     await joplin.workspace.onSyncComplete(async () =>  {
       const vis = await joplin.views.panels.visible(panel);
       if (vis)
-        updateHistView(panel, settings);
+        updateHistView(panel, settings, state);
     });
 
     await joplin.views.panels.onMessage(panel, (message) => {
@@ -139,6 +146,6 @@ joplin.plugins.register({
     });
 
     await updateSettings(settings);
-    updateHistView(panel, settings);
+    updateHistView(panel, settings, state);
   },
 });

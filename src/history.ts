@@ -5,10 +5,18 @@ import { HistSettings } from './settings';
 const linkExp = new RegExp(/{(.*?)}/g);
 const noteExp = new RegExp(/\[(?<title>[^\[]+)\]\(:\/(?<id>.*)\)/g);
 
+export interface HistState {
+  cacheHist: string[];
+  cacheHtml: string[];
+  cacheCounter: Map<string, number>;
+  newItems: number;
+}
+
 /**
  * logs a new selected note in the history note.
  */
-export default async function addHistItem(params: HistSettings) {
+export default async function addHistItem(params: HistSettings, state: HistState) {
+  state.newItems = 0;
   let note;
   try {
     note = await joplin.workspace.selectedNote();
@@ -35,7 +43,7 @@ export default async function addHistItem(params: HistSettings) {
 
   if (params.secBetweenItems > 0)
     histNote.body = cleanNewHist(histNote.body, date,
-        params.secBetweenItems, params.trailFormat);
+        params.secBetweenItems, params.trailFormat, state);
 
   if (params.maxDays > 0)
     histNote.body = cleanOldHist(histNote.body, date, params.maxDays);
@@ -49,6 +57,7 @@ export default async function addHistItem(params: HistSettings) {
 
   const newItem = formatItem(date, note.title, note.id, [], params.trailFormat) + '\n';
   histNote.body = newItem + histNote.body;
+  state.newItems += 1;
 
   if (params.trailRecords > 0) {
     const lines = histNote.body.split('\n');
@@ -57,7 +66,7 @@ export default async function addHistItem(params: HistSettings) {
     histNote.body = lines.join('\n');
   }
 
-  await joplin.data.put(['notes', histNote.id], null, { body: histNote.body});
+  await joplin.data.put(['notes', histNote.id], null, { body: histNote.body });
 
   // const finish = new Date();
   // console.log('took ' + (finish.getTime() - date.getTime()) + 'ms.')
@@ -165,12 +174,13 @@ function isDuplicate(body: string, note: any, date: Date): boolean {
  * removes history items if they are too recent.
  */
 function cleanNewHist(body: string, newItemDate: Date, minSecBetweenItems: number,
-    trailFormat: number): string {
+    trailFormat: number, state: HistState): string {
   const lastItemDate = new Date(body.slice(0, 24));
   if (newItemDate.getTime() - lastItemDate.getTime() >= 1000*minSecBetweenItems)
     return body;
 
   // remove last item from history
+  state.newItems -= 1;
   body = cleanNewTrail(body, trailFormat);
   const ind = body.search('\n');
   return body.slice(ind+1);
