@@ -35,6 +35,24 @@ html {
   font-weight: bold;
 }
 
+.hist-loader {
+  text-align: center;
+  margin: 0px;
+  text-overflow: clip;
+  overflow-x: hidden;
+  overflow-y: hidden;
+  white-space: nowrap;
+}
+
+.hist-loader a {
+  color: var(--joplin-color);
+  text-decoration: none;
+}
+
+.hist-loader a:active, a:hover {
+  font-weight: bold;
+}
+
 .hist-plot {
   vertical-align: text-top;
   stroke-width: 2px;

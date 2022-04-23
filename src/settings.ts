@@ -10,6 +10,7 @@ export interface HistSettings {
   panelTitleSize: number;
   panelTextSize: number;
   panelTextSpace: number;
+  panelMaxItems: number;
   trailDisplay: number;
   trailRecords: number;
   trailBacklinks: boolean;

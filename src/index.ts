@@ -14,6 +14,7 @@ const settings: HistSettings = {
   panelTitleSize: 13,
   panelTextSize: 12,
   panelTextSpace: 4,
+  panelMaxItems: 1000,
   trailDisplay: 3,
   trailRecords: 6,
   trailBacklinks: true,
@@ -50,7 +51,7 @@ joplin.plugins.register({
       execute: async () => {
         const note = await joplin.workspace.selectedNote();
         await joplin.settings.setValue('histNoteId', note.id);
-        updateHistView(panel, settings);
+        updateHistView(panel, settings, false);
       },
     });
 
@@ -103,7 +104,7 @@ joplin.plugins.register({
         if (vis)
           joplin.views.panels.hide(panel);
         else{
-          updateHistView(panel, settings);
+          updateHistView(panel, settings, false);
           joplin.views.panels.show(panel);
         }
       },
@@ -116,29 +117,32 @@ joplin.plugins.register({
       await updateSettings(settings);
       const vis = await joplin.views.panels.visible(panel);
       if (vis)
-        updateHistView(panel, settings);
+        updateHistView(panel, settings, false);
     });
 
     await joplin.workspace.onNoteSelectionChange(async () => {
       await addHistItem(settings);
       const vis = await joplin.views.panels.visible(panel);
       if (vis)
-        updateHistView(panel, settings);
+        updateHistView(panel, settings, false);
     });
 
     await joplin.workspace.onSyncComplete(async () =>  {
       const vis = await joplin.views.panels.visible(panel);
       if (vis)
-        updateHistView(panel, settings);
+        updateHistView(panel, settings, false);
     });
 
     await joplin.views.panels.onMessage(panel, (message) => {
       if (message.name === 'openHistory') {
         joplin.commands.execute('openNote', message.hash);
       }
+      if (message.name === 'loadHistory') {
+        updateHistView(panel, settings, true);
+      }
     });
 
     await updateSettings(settings);
-    updateHistView(panel, settings);
+    updateHistView(panel, settings, false);
   },
 });

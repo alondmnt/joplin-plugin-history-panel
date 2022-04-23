@@ -7,4 +7,9 @@ document.addEventListener('click', event => {
 			hash: element.dataset.slug,
 		});
 	}
+	if (element.className === 'hist-loader') {
+		webviewApi.postMessage({
+			name: 'loadHistory',
+		})
+	}
 });

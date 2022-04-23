@@ -2,7 +2,7 @@ import joplin from 'api';
 import { parseItem } from './history';
 import { HistSettings, freqScope, freqLoc, freqOpen } from './settings';
 
-async function getHistHtml(params: HistSettings): Promise<string> {
+async function getHistHtml(maxItems: number, params: HistSettings): Promise<string> {
   let histNote;
   try {
     histNote = await joplin.data.get(['notes', params.histNoteId], { fields: ['body'] });
@@ -14,35 +14,39 @@ async function getHistHtml(params: HistSettings): Promise<string> {
 
   let itemMap = new Map<string, string>();
 
-  const [itemHtml, itemCounter] = getItemHtml(
-      histNote.body.split('\n'), itemMap, params);
+  const lines = histNote.body.split('\n')
+  const [itemHtml, itemCounter] = getItemHtml(lines, itemMap, maxItems, params);
 
   let statsHtml = '';
   if (params.freqLoc != freqLoc.hide)
     statsHtml = getStatsHtml(itemCounter, itemMap, params);
 
-  let allHtml = '';
+  let allHtml: string[] = [];
   if (params.freqLoc == freqLoc.top)
-    allHtml += statsHtml;
-  allHtml += first_sec + itemHtml.join('\n');
+    allHtml.push(statsHtml);
+  allHtml = allHtml.concat([first_sec], itemHtml);
   if (params.freqLoc == freqLoc.bottom)
-    allHtml += statsHtml;
+    allHtml.push(statsHtml);
 
-  return allHtml
+  if (maxItems < lines.length)
+    allHtml.push(`<p class="hist-loader"><a class="hist-loader" href="#">Load more items</a><br><br></p>`);
+
+  return allHtml.join('\n')
 }
 
 function getItemHtml(lines: string[], itemMap: Map<string,
-    string>, params: HistSettings):
-  [string[], Map<string, number>] {
+    string>, maxItems: number, params: HistSettings):
+    [string[], Map<string, number>] {
   let foldTag: string;
   let plotTag: string;
   const dateScope = new Set(['today']);
   const activeTrail = new Set() as Set<number>;
   let itemCounter = new Map<string, number>();
   let itemHtml: string[] = [];
+  const N = Math.min(maxItems, lines.length);
 
-  for (const line of lines) {
-    const [noteDate, noteTitle, noteId, noteTrail] = parseItem(line);
+  for (let i=0; i < N; i++) {
+    const [noteDate, noteTitle, noteId, noteTrail] = parseItem(lines[i]);
     foldTag = getFoldTag(noteDate, dateScope, params.panelTextSize);
     plotTag = getPlotTag(noteTrail, activeTrail, params);
     if (params.freqLoc != freqLoc.hide)
@@ -215,11 +219,12 @@ function escapeHtml(unsafe:string): string {
     .replace(/'/g, "&#039;");
 }
 
-export default async function updateHistView(panel:string, params: HistSettings) {
-  // const start = new Date().getTime();
+export default async function updateHistView(panel:string, params: HistSettings, loadAll: boolean) {
+  const start = new Date().getTime();
 
   // First create the HTML for each history item:
-  const itemHtml = await getHistHtml(params);
+  const N = (loadAll) ? Infinity:params.panelMaxItems;
+  const itemHtml = await getHistHtml(N, params);
 
   // Finally, insert all the items in a container and set the webview HTML:
   await joplin.views.panels.setHtml(panel, `
@@ -235,6 +240,6 @@ export default async function updateHistView(panel:string, params: HistSettings)
     ${itemHtml}
   </div>
   `);
-  // const finish = new Date().getTime();
-  // console.log('updateHistView: ' + (finish-start) + 'ms')
+  const finish = new Date().getTime();
+  console.log('updateHistView: ' + (finish-start) + 'ms')
 }
