@@ -2,7 +2,7 @@ import joplin from 'api';
 import { parseItem } from './history';
 import { HistSettings, freqScope, freqLoc, freqOpen } from './settings';
 
-async function getItemHtml(params: HistSettings): Promise<string> {
+async function getHistHtml(params: HistSettings): Promise<string> {
   let histNote;
   try {
     histNote = await joplin.data.get(['notes', params.histNoteId], { fields: ['body'] });
@@ -10,22 +10,43 @@ async function getItemHtml(params: HistSettings): Promise<string> {
     return 'Please set a history note (from the Tools menu) to start logging';
   }
 
-  const itemHtml: string[] = [];
-  itemHtml.push(`<details open class="hist-section"><summary class="hist-section" style="font-size: ${params.panelTextSize}px">Today</summary>`);
+  const first_sec = `<details open class="hist-section"><summary class="hist-section" style="font-size: ${params.panelTextSize}px">Today</summary>`;
 
+  let itemMap = new Map<string, string>();
+
+  const [itemHtml, itemCounter] = getItemHtml(
+      histNote.body.split('\n'), itemMap, params);
+
+  let statsHtml = '';
+  if (params.freqLoc != freqLoc.hide)
+    statsHtml = getStatsHtml(itemCounter, itemMap, params);
+
+  let allHtml = '';
+  if (params.freqLoc == freqLoc.top)
+    allHtml += statsHtml;
+  allHtml += first_sec + itemHtml.join('\n');
+  if (params.freqLoc == freqLoc.bottom)
+    allHtml += statsHtml;
+
+  return allHtml
+}
+
+function getItemHtml(lines: string[], itemMap: Map<string,
+    string>, params: HistSettings):
+  [string[], Map<string, number>] {
   let foldTag: string;
   let plotTag: string;
   const dateScope = new Set(['today']);
   const activeTrail = new Set() as Set<number>;
-  let noteCounter = new Map<string, number>();
-  let noteMap = new Map<string, string>();
+  let itemCounter = new Map<string, number>();
+  let itemHtml: string[] = [];
 
-  for (const line of histNote.body.split('\n')) {
+  for (const line of lines) {
     const [noteDate, noteTitle, noteId, noteTrail] = parseItem(line);
     foldTag = getFoldTag(noteDate, dateScope, params.panelTextSize);
     plotTag = getPlotTag(noteTrail, activeTrail, params);
     if (params.freqLoc != freqLoc.hide)
-      updateStats(noteId, noteTitle, noteDate, noteCounter, noteMap, dateScope, params);
+      updateStats(noteId, noteTitle, noteDate, itemCounter, itemMap, dateScope, params);
 
     itemHtml.push(`
             ${foldTag}
@@ -37,20 +58,8 @@ async function getItemHtml(params: HistSettings): Promise<string> {
             </p>
           `);
   }
-  itemHtml.push('</details>')
-
-  let statsHtml = '';
-  if (params.freqLoc != freqLoc.hide)
-    statsHtml = getStatsHtml(noteCounter, noteMap, params);
-
-  let allHtml = '';
-  if (params.freqLoc == freqLoc.top)
-    allHtml += statsHtml;
-  allHtml += itemHtml.join('\n');
-  if (params.freqLoc == freqLoc.bottom)
-    allHtml += statsHtml;
-
-  return allHtml
+  itemHtml.push('</details>');
+  return [itemHtml, itemCounter];
 }
 
 function getFoldTag(noteDate: Date, dateScope: Set<string>, fontSize: number): string {
@@ -120,7 +129,7 @@ function getPlotTag(trail: number[], activeTrail: Set<number>, params: HistSetti
 }
 
 function updateStats(noteId: string, noteTitle: string, noteDate: Date,
-    noteCounter: Map<string, number>, noteMap: Map<string, string>,
+    itemCounter: Map<string, number>, itemMap: Map<string, string>,
     dateScope: Set<string>, params: HistSettings) {
   const now = new Date();
   const dayDiff = getDateDay(now) - getDateDay(noteDate);
@@ -138,20 +147,20 @@ function updateStats(noteId: string, noteTitle: string, noteDate: Date,
       (getYearString(noteDate) != getYearString(now))) {
     return
   }
-  if (!noteCounter.has(noteId)) {
-    noteCounter.set(noteId, 0);
-    noteMap.set(noteId, noteTitle);
+  if (!itemCounter.has(noteId)) {
+    itemCounter.set(noteId, 0);
+    itemMap.set(noteId, noteTitle);
   }
-  noteCounter.set(noteId, noteCounter.get(noteId) + 1);
+  itemCounter.set(noteId, itemCounter.get(noteId) + 1);
 }
 
-function getStatsHtml(noteCounter: Map<string, number>,
-      noteMap: Map<string, string>, params: HistSettings): string {
+function getStatsHtml(itemCounter: Map<string, number>,
+      itemMap: Map<string, string>, params: HistSettings): string {
   const maxR = 0.9*Math.min(params.panelTextSize, params.plotSize[0]) / 2;  // px, leaving 10% margin
   const minR = 1;
   const itemHtml: string[] = [];
-  const noteOrder = new Map([...noteCounter.entries()].sort((a, b) => b[1] - a[1]));
-  const maxCount = Math.max(...noteCounter.values());
+  const noteOrder = new Map([...itemCounter.entries()].sort((a, b) => b[1] - a[1]));
+  const maxCount = Math.max(...itemCounter.values());
 
   let strOpen = '';
   if (params.freqOpen == freqOpen.open)
@@ -175,7 +184,7 @@ function getStatsHtml(noteCounter: Map<string, number>,
             stroke="none" fill="${params.trailColors[0]}" />
       </svg>
       <a class="hist-item" href="#" data-slug="${id}">
-        ${escapeHtml(`${noteMap.get(id)}`)}
+        ${escapeHtml(`${itemMap.get(id)}`)}
       </a>
       </p>
     `);
@@ -210,7 +219,7 @@ export default async function updateHistView(panel:string, params: HistSettings)
   // const start = new Date().getTime();
 
   // First create the HTML for each history item:
-  const itemHtml = await getItemHtml(params);
+  const itemHtml = await getHistHtml(params);
 
   // Finally, insert all the items in a container and set the webview HTML:
   await joplin.views.panels.setHtml(panel, `
