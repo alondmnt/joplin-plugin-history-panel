@@ -224,10 +224,19 @@ function cleanOldHist(body: string, newItemDate: Date, maxHistDays: number): str
 async function fixUntitledItem(body: string, trailFormat: number): Promise<string> {
   const ind = body.search('\n');
   let [itemDate, itemTitle, itemId, itemTrail] = parseItem(body.slice(0, ind));
-  if (itemTitle == 'Untitled') {
+  if (itemTitle != 'Untitled')
+    return body
+
+  body = body.slice(ind + 1);  // remove untitled item
+  try {
     const note = await joplin.data.get(['notes', itemId], { fields: ['title'] });
-    body = formatItem(itemDate, note.title, itemId, itemTrail, trailFormat) + body.slice(ind);
+    if (note)
+      if (note.title == '') note.title = 'Untitled';
+    body = formatItem(itemDate, note.title, itemId, itemTrail, trailFormat) + '\n' + body;
+  } catch {
+    console.log('fixUntitledItem: failed to open untitled note');
   }
+
   return body
 }
 
