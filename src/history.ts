@@ -1,15 +1,23 @@
 import joplin from 'api';
-import { settings } from 'cluster';
 import { HistSettings } from './settings';
 
 const DEBUG = false;
+
 const linkExp = new RegExp(/{(.*?)}/g);
 const noteExp = new RegExp(/\[(?<title>[^\[]+)\]\(:\/(?<id>.*)\)/g);
+
+export interface HistItem {
+  date: Date;
+  id: string;
+  title: string;
+  trails: number[];
+}
 
 /**
  * logs a new selected note in the history note.
  */
 export default async function addHistItem(params: HistSettings) {
+  // get current note
   let note;
   try {
     note = await joplin.workspace.selectedNote();
@@ -22,6 +30,7 @@ export default async function addHistItem(params: HistSettings) {
   }
   if ((note.id == params.histNoteId) || params.excludeNotes.has(note.id)) return;
 
+  // get history note
   let histNote;
   try {
     histNote = await joplin.data.get(['notes', params.histNoteId], { fields: ['id', 'title', 'body'] });
@@ -30,25 +39,32 @@ export default async function addHistItem(params: HistSettings) {
     return
   }
 
-  const date = new Date();
-  if (isDuplicate(histNote.body, note, date))  // do not duplicate the last item
+  // tidy up history
+  const item: HistItem = {
+    date: new Date(),
+    id: note.id,
+    title: note.title,
+    trails: [],
+  }
+  if (isDuplicate(histNote.body, note, item.date))  // do not duplicate the last item
     return
 
   if (params.secBetweenItems > 0)
-    histNote.body = cleanNewHist(histNote.body, date,
+    histNote.body = cleanNewHist(histNote.body, item.date,
         params.secBetweenItems, params.trailFormat);
 
   if (params.maxDays > 0)
-    histNote.body = cleanOldHist(histNote.body, date, params.maxDays);
+    histNote.body = cleanOldHist(histNote.body, item.date, params.maxDays);
 
-  if (isDuplicate(histNote.body, note, date)) {  // do not duplicate the last item
+  if (isDuplicate(histNote.body, note, item.date)) {  // do not duplicate the last item
     await joplin.data.put(['notes', histNote.id], null, { body: histNote.body });
     return
   }
 
   histNote.body = await fixUntitledItem(histNote.body, params.trailFormat);
 
-  const newItem = formatItem(date, note.title, note.id, [], params.trailFormat) + '\n';
+  // add new item
+  const newItem = formatItem(item, params.trailFormat) + '\n';
   histNote.body = newItem + histNote.body;
 
   if (params.trailRecords > 0) {
@@ -60,40 +76,41 @@ export default async function addHistItem(params: HistSettings) {
 
   await joplin.data.put(['notes', histNote.id], null, { body: histNote.body});
 
-  // const finish = new Date();
-  // console.log('took ' + (finish.getTime() - date.getTime()) + 'ms.')
+  const finish = new Date();
+  if (DEBUG)
+    console.log('addHistItem: ' + (finish.getTime() - item.date.getTime()) + 'ms');
 }
 
 /**
  * recursively searches for links to a new history item,
  * and updates the body of the history note with new trails.
  */
-async function addTrailToItem(note: any, lines: string[], i: number,
+async function addTrailToItem(noteDest: any, lines: string[], i: number,
     processed: Set<string>, existLevels: Set<number>, params: HistSettings):
     Promise<[boolean, number]> {
   if (i == lines.length)
     return [false, 1]
-  const [itemDate, itemTitle, itemId, itemTrail, error] = parseItem(lines[i]);
+  const [item, error] = parseItem(lines[i]);
 
   if (i > params.trailLength)
     return [false, getNextLevel(existLevels)];  // link not found
 
-  existLevels = setUnion(existLevels, new Set(itemTrail));
+  existLevels = setUnion(existLevels, new Set(item.trails));
   const nl = getNextLevel(existLevels);
   if ((i > 1) && (nl > params.trailRecords))
     return [false, nl];  // link not found
 
-  if ((i > 0) && !processed.has(itemId)){
+  if ((i > 0) && !processed.has(item.id)){
     let skip = false;
-    let item;
+    let noteSource;
     try {
-      item = await joplin.data.get(['notes', itemId], { fields: ['id', 'body'] });
+      noteSource = await joplin.data.get(['notes', item.id], { fields: ['id', 'body'] });
     } catch {
       skip = true;
-      if (DEBUG) console.log('addTrailToItem: bad note');
+      if (DEBUG) console.log(`addTrailToItem: bad note = ${item}`);
     }
 
-    if (!skip && isLinked(item.body, item.id, note.body, note.id, params.trailBacklinks)) {
+    if (!skip && isLinked(noteSource.body, noteSource.id, noteDest.body, noteDest.id, params.trailBacklinks)) {
       let nextLevel: number;
       if (i == 1)
         nextLevel = 1;
@@ -102,22 +119,21 @@ async function addTrailToItem(note: any, lines: string[], i: number,
       // add trail to all previous items (but not to current)
       return [true, nextLevel];  // link found
     }
-    processed.add(itemId);
+    processed.add(item.id);
   }
 
   // processed, means that it is not linked to the note, continue processing
-  const [foundLink, nextLevel] = await addTrailToItem(note, lines, i+1, processed, existLevels, params);
+  const [foundLink, nextLevel] = await addTrailToItem(noteDest, lines, i+1, processed, existLevels, params);
   if ((foundLink) && (!error)) {
-    itemTrail.push(nextLevel);
-    lines[i] = formatItem(itemDate, itemTitle, itemId, itemTrail, params.trailFormat);
+    item.trails.push(nextLevel);
+    lines[i] = formatItem(item, params.trailFormat);
   }
   return [foundLink, nextLevel];
 }
 
-function formatItem(date: Date, title: string, id: string, trail: number[],
-      trailFormat: number): string {
+function formatItem(item: HistItem, trailFormat: number): string {
   let trailString = '';
-  trail = trail.sort();
+  let trail = item.trails.sort();
   if (trailFormat == 0)
       trail = trail.reverse();
   if (trail.length > 0)
@@ -125,12 +141,12 @@ function formatItem(date: Date, title: string, id: string, trail: number[],
 
   try {
     if (trailFormat == 0) {
-      return `${date.toISOString()}${trailString} [${title}](:/${id})`;
+      return `${item.date.toISOString()}${trailString} [${item.title}](:/${item.id})`;
     } else {
-      return `${date.toISOString()} [${title}](:/${id})${trailString}`;
+      return `${item.date.toISOString()} [${item.title}](:/${item.id})${trailString}`;
     }
   } catch {
-    if (DEBUG) console.log(`formatItem: bad data = ${[date, title, id, trail]}`);
+    if (DEBUG) console.log(`formatItem: bad data = ${item}`);
     return '';
   }
 }
@@ -138,40 +154,42 @@ function formatItem(date: Date, title: string, id: string, trail: number[],
 /**
  * @returns [date, title, id, trail]
  */
-export function parseItem(line: string): [Date, string, string, number[], boolean] {
-  let date: Date;
-  let title = '';
-  let id = '';
-  let trail = [] as number[];
+export function parseItem(line: string): [HistItem, boolean] {
+  const item: HistItem = {
+    date: new Date(),
+    id: '',
+    title: '',
+    trails: [],
+  };
 
   try {
-    const date = new Date(line.slice(0, 24));
-    if (isNaN(date.valueOf())) throw 'bad date';
+    item.date = new Date(line.slice(0, 24));
+    if (isNaN(item.date.valueOf())) throw 'bad date';
 
     noteExp.lastIndex = 0;
     const noteMatch = noteExp.exec(line);
     if (noteMatch){
-      title = noteMatch.groups.title;
-      id = noteMatch.groups.id;
+      item.title = noteMatch.groups.title;
+      item.id = noteMatch.groups.id;
     }
 
     const linkMatch = line.match(linkExp);
     if (linkMatch)
-      trail = linkMatch[0].slice(1, -1).split(',').map(Number);
+      item.trails = linkMatch[0].slice(1, -1).split(',').map(Number);
 
-    return [date, title, id, trail, false];
+    return [item, false];
   } catch {
     if (DEBUG) console.log('parseItem: bad line=' + line);
-    return [date, title, id, trail, true];
+    return [item, true];
   }
 }
 
 function isDuplicate(body: string, note: any, date: Date): boolean {
   const ind = body.search('\n');
-  const [itemDate, itemTitle, itemId, itemTrail, error] = parseItem(body.slice(0, ind));
+  const [item, error] = parseItem(body.slice(0, ind));
   if (error) return false
   // TODO: if this becomes too slow, skip parseItem and get just the date, id
-  return (itemId == note.id) && (itemDate.getDate() == date.getDate());
+  return (item.id == note.id) && (item.date.getDate() == date.getDate());
 }
 
 /**
@@ -191,11 +209,11 @@ function cleanNewHist(body: string, newItemDate: Date, minSecBetweenItems: numbe
 
 function cleanNewTrail(body: string, trailFormat: number): string {
   const ind = body.search('\n');
-  const itemTrail = parseItem(body.slice(0, ind))[3];
-  if (itemTrail.length == 0)
+  const [item, error] = parseItem(body.slice(0, ind));
+  if (item.trails.length == 0)
     return body;
 
-  const level = itemTrail[0];  // last item has at most one trail
+  const level = item.trails[0];  // last item has at most one trail
 
   if (level == 1) {
     return body  // last line will be removed by calling function
@@ -203,16 +221,16 @@ function cleanNewTrail(body: string, trailFormat: number): string {
 
   const lines = body.split('\n');
   for (let i = 0; i < lines.length; i++) {
-    const [itemDate, itemTitle, itemId, itemTrail, error] = parseItem(lines[i]);
+    const [item, error] = parseItem(lines[i]);
     if (error) {
       if (DEBUG) console.log(`cleanNewTrail: failed on line ${i}:\n${lines[i]}`);
       continue;
     }
-    const ind = itemTrail.indexOf(level);
+    const ind = item.trails.indexOf(level);
     if (ind < 0)  // once the trail ends
       break
-    itemTrail.splice(ind, 1);
-    lines[i] = formatItem(itemDate, itemTitle, itemId, itemTrail, trailFormat);
+    item.trails.splice(ind, 1);
+    lines[i] = formatItem(item, trailFormat);
   }
   return lines.join('\n');
 }
@@ -236,16 +254,18 @@ function cleanOldHist(body: string, newItemDate: Date, maxHistDays: number): str
  */
 async function fixUntitledItem(body: string, trailFormat: number): Promise<string> {
   const ind = body.search('\n');
-  let [itemDate, itemTitle, itemId, itemTrail, error] = parseItem(body.slice(0, ind));
-  if ((itemTitle != 'Untitled') || (error))
+  let [item, error] = parseItem(body.slice(0, ind));
+  if ((item.title != 'Untitled') || (error))
     return body
 
   body = body.slice(ind + 1);  // remove untitled item
   try {
-    const note = await joplin.data.get(['notes', itemId], { fields: ['title'] });
-    if (note)
-      if (note.title == '') note.title = 'Untitled';
-    body = formatItem(itemDate, note.title, itemId, itemTrail, trailFormat) + '\n' + body;
+    const note = await joplin.data.get(['notes', item.id], { fields: ['title'] });
+    if (note) {
+      if (note.title == '') item.title = 'Untitled';
+      else item.title = note.title;
+    }
+    body = formatItem(item, trailFormat) + '\n' + body;
   } catch {
     if (DEBUG) console.log('fixUntitledItem: failed to open untitled note');
   }

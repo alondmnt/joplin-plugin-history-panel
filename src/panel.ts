@@ -1,5 +1,5 @@
 import joplin from 'api';
-import { parseItem } from './history';
+import { HistItem, parseItem } from './history';
 import { HistSettings, freqScope, freqLoc, freqOpen } from './settings';
 
 const DEBUG = false;
@@ -47,20 +47,20 @@ function getItemHtml(lines: string[], itemMap: Map<string,
   let itemHtml: string[] = [];
   const N = Math.min(maxItems, lines.length);
 
-  for (let i=0; i < N; i++) {
-    const [noteDate, noteTitle, noteId, noteTrail, error] = parseItem(lines[i]);
+  for (let i = 0; i < N; i++) {
+    const [item, error] = parseItem(lines[i]);
     if (error) continue;
-    foldTag = getFoldTag(noteDate, dateScope, params.panelTextSize);
-    plotTag = getPlotTag(noteTrail, activeTrail, params);
+    foldTag = getFoldTag(item, dateScope, params.panelTextSize);
+    plotTag = getPlotTag(item.trails, activeTrail, params);
     if (params.freqLoc != freqLoc.hide)
-      updateStats(noteId, noteTitle, noteDate, itemCounter, itemMap, dateScope, params);
+      updateStats(item, itemCounter, itemMap, dateScope, params);
 
     itemHtml.push(`
             ${foldTag}
             <p class="hist-item" style="font-size: ${params.panelTextSize}px; height: ${params.plotSize[1]}px">
               ${plotTag}
-              <a class="hist-item" href="#" data-slug="${noteId}">
-                ${escapeHtml(noteTitle)}
+              <a class="hist-item" href="#" data-slug="${item.id}">
+                ${escapeHtml(item.title)}
               </a>
             </p>
           `);
@@ -69,11 +69,11 @@ function getItemHtml(lines: string[], itemMap: Map<string,
   return [itemHtml, itemCounter];
 }
 
-function getFoldTag(noteDate: Date, dateScope: Set<string>, fontSize: number): string {
+function getFoldTag(item: HistItem, dateScope: Set<string>, fontSize: number): string {
   /* whenever we pass a threshold, we need to close the previous folding section
      and start a new one */
   const now = new Date();
-  const dayDiff = getDateDay(now) - getDateDay(noteDate);
+  const dayDiff = getDateDay(now) - getDateDay(item.date);
   if (!dateScope.has('yesterday') && (dayDiff == 1)) {
     dateScope.add('yesterday');
     return `</details><details class="hist-section"><summary class="hist-section" style="font-size: ${fontSize}px">Yesterday</summary>`;
@@ -84,7 +84,7 @@ function getFoldTag(noteDate: Date, dateScope: Set<string>, fontSize: number): s
     return `</details><details class="hist-section"><summary class="hist-section" style="font-size: ${fontSize}px">Last 7 days</summary>`;
   }
 
-  let strMonth = getMonthString(noteDate);
+  let strMonth = getMonthString(item.date);
   if (strMonth == getMonthString(now))
     strMonth = 'This month';
   if (!dateScope.has(strMonth) && (dayDiff > 6)) {
@@ -135,11 +135,10 @@ function getPlotTag(trail: number[], activeTrail: Set<number>, params: HistSetti
   return plot + '</svg>';
 }
 
-function updateStats(noteId: string, noteTitle: string, noteDate: Date,
-    itemCounter: Map<string, number>, itemMap: Map<string, string>,
-    dateScope: Set<string>, params: HistSettings) {
+function updateStats(item: HistItem, itemCounter: Map<string, number>,
+    itemMap: Map<string, string>, dateScope: Set<string>, params: HistSettings) {
   const now = new Date();
-  const dayDiff = getDateDay(now) - getDateDay(noteDate);
+  const dayDiff = getDateDay(now) - getDateDay(item.date);
   if ((params.freqScope == freqScope.today) && (dayDiff > 0)) {
     return
   }
@@ -147,18 +146,18 @@ function updateStats(noteId: string, noteTitle: string, noteDate: Date,
     return
   }
   if ((params.freqScope == freqScope.month) &&
-      (getMonthString(noteDate) != getMonthString(now))) {
+      (getMonthString(item.date) != getMonthString(now))) {
     return
   }
   if ((params.freqScope == freqScope.year) &&
-      (getYearString(noteDate) != getYearString(now))) {
+      (getYearString(item.date) != getYearString(now))) {
     return
   }
-  if (!itemCounter.has(noteId)) {
-    itemCounter.set(noteId, 0);
-    itemMap.set(noteId, noteTitle);
+  if (!itemCounter.has(item.id)) {
+    itemCounter.set(item.id, 0);
+    itemMap.set(item.id, item.title);
   }
-  itemCounter.set(noteId, itemCounter.get(noteId) + 1);
+  itemCounter.set(item.id, itemCounter.get(item.id) + 1);
 }
 
 function getStatsHtml(itemCounter: Map<string, number>,
