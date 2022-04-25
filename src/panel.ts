@@ -2,6 +2,8 @@ import joplin from 'api';
 import { parseItem } from './history';
 import { HistSettings, freqScope, freqLoc, freqOpen } from './settings';
 
+const DEBUG = false;
+
 async function getHistHtml(maxItems: number, params: HistSettings): Promise<string> {
   let histNote;
   try {
@@ -46,7 +48,8 @@ function getItemHtml(lines: string[], itemMap: Map<string,
   const N = Math.min(maxItems, lines.length);
 
   for (let i=0; i < N; i++) {
-    const [noteDate, noteTitle, noteId, noteTrail] = parseItem(lines[i]);
+    const [noteDate, noteTitle, noteId, noteTrail, error] = parseItem(lines[i]);
+    if (error) continue;
     foldTag = getFoldTag(noteDate, dateScope, params.panelTextSize);
     plotTag = getPlotTag(noteTrail, activeTrail, params);
     if (params.freqLoc != freqLoc.hide)
@@ -241,5 +244,5 @@ export default async function updateHistView(panel:string, params: HistSettings,
   </div>
   `);
   const finish = new Date().getTime();
-  console.log('updateHistView: ' + (finish-start) + 'ms')
+  if (DEBUG) console.log('updateHistView: ' + (finish-start) + 'ms');
 }

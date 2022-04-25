@@ -2,6 +2,7 @@ import joplin from 'api';
 import { settings } from 'cluster';
 import { HistSettings } from './settings';
 
+const DEBUG = false;
 const linkExp = new RegExp(/{(.*?)}/g);
 const noteExp = new RegExp(/\[(?<title>[^\[]+)\]\(:\/(?<id>.*)\)/g);
 
@@ -16,7 +17,7 @@ export default async function addHistItem(params: HistSettings) {
     if (note.title == '')
       note.title = 'Untitled';
   } catch{
-    console.log('addHistItem: failed to get selected note');
+    if (DEBUG) console.log('addHistItem: failed to get selected note');
     return;
   }
   if ((note.id == params.histNoteId) || params.excludeNotes.has(note.id)) return;
@@ -25,7 +26,7 @@ export default async function addHistItem(params: HistSettings) {
   try {
     histNote = await joplin.data.get(['notes', params.histNoteId], { fields: ['id', 'title', 'body'] });
   } catch {
-    console.log('addHistItem: failed when histNoteId = ' + params.histNoteId);
+    if (DEBUG) console.log('addHistItem: failed when histNoteId = ' + params.histNoteId);
     return
   }
 
@@ -72,7 +73,7 @@ async function addTrailToItem(note: any, lines: string[], i: number,
     Promise<[boolean, number]> {
   if (i == lines.length)
     return [false, 1]
-  const [itemDate, itemTitle, itemId, itemTrail] = parseItem(lines[i]);
+  const [itemDate, itemTitle, itemId, itemTrail, error] = parseItem(lines[i]);
 
   if (i > params.trailLength)
     return [false, getNextLevel(existLevels)];  // link not found
@@ -89,7 +90,7 @@ async function addTrailToItem(note: any, lines: string[], i: number,
       item = await joplin.data.get(['notes', itemId], { fields: ['id', 'body'] });
     } catch {
       skip = true;
-      console.log('addTrailToItem: bad note');
+      if (DEBUG) console.log('addTrailToItem: bad note');
     }
 
     if (!skip && isLinked(item.body, item.id, note.body, note.id, params.trailBacklinks)) {
@@ -106,7 +107,7 @@ async function addTrailToItem(note: any, lines: string[], i: number,
 
   // processed, means that it is not linked to the note, continue processing
   const [foundLink, nextLevel] = await addTrailToItem(note, lines, i+1, processed, existLevels, params);
-  if (foundLink){
+  if ((foundLink) && (!error)) {
     itemTrail.push(nextLevel);
     lines[i] = formatItem(itemDate, itemTitle, itemId, itemTrail, params.trailFormat);
   }
@@ -122,41 +123,53 @@ function formatItem(date: Date, title: string, id: string, trail: number[],
   if (trail.length > 0)
     trailString = ` {${trail.map(String).join(',')}}`;
 
-  if (trailFormat == 0) {
-    return `${date.toISOString()}${trailString} [${title}](:/${id})`;
-  } else {
-    return `${date.toISOString()} [${title}](:/${id})${trailString}`;
+  try {
+    if (trailFormat == 0) {
+      return `${date.toISOString()}${trailString} [${title}](:/${id})`;
+    } else {
+      return `${date.toISOString()} [${title}](:/${id})${trailString}`;
+    }
+  } catch {
+    if (DEBUG) console.log(`formatItem: bad data = ${[date, title, id, trail]}`);
+    return '';
   }
 }
 
 /**
  * @returns [date, title, id, trail]
  */
-export function parseItem(line: string): [Date, string, string, number[]] {
-  const date = new Date(line.slice(0, 24));
-
-  noteExp.lastIndex = 0;
-  const noteMatch = noteExp.exec(line);
+export function parseItem(line: string): [Date, string, string, number[], boolean] {
+  let date: Date;
   let title = '';
   let id = '';
-  if (noteMatch){
-    title = noteMatch.groups.title;
-    id = noteMatch.groups.id;
-  }
-  if (title.length == 0)
-    console.log('parseItem: bad parse, line=' + line);
-
   let trail = [] as number[];
-  const linkMatch = line.match(linkExp);
-  if (linkMatch)
-    trail = linkMatch[0].slice(1, -1).split(',').map(Number);
 
-  return [date, title, id, trail];
+  try {
+    const date = new Date(line.slice(0, 24));
+    if (isNaN(date.valueOf())) throw 'bad date';
+
+    noteExp.lastIndex = 0;
+    const noteMatch = noteExp.exec(line);
+    if (noteMatch){
+      title = noteMatch.groups.title;
+      id = noteMatch.groups.id;
+    }
+
+    const linkMatch = line.match(linkExp);
+    if (linkMatch)
+      trail = linkMatch[0].slice(1, -1).split(',').map(Number);
+
+    return [date, title, id, trail, false];
+  } catch {
+    if (DEBUG) console.log('parseItem: bad line=' + line);
+    return [date, title, id, trail, true];
+  }
 }
 
 function isDuplicate(body: string, note: any, date: Date): boolean {
   const ind = body.search('\n');
-  const [itemDate, itemTitle, itemId, itemTrail] = parseItem(body.slice(0, ind));
+  const [itemDate, itemTitle, itemId, itemTrail, error] = parseItem(body.slice(0, ind));
+  if (error) return false
   // TODO: if this becomes too slow, skip parseItem and get just the date, id
   return (itemId == note.id) && (itemDate.getDate() == date.getDate());
 }
@@ -190,16 +203,16 @@ function cleanNewTrail(body: string, trailFormat: number): string {
 
   const lines = body.split('\n');
   for (let i = 0; i < lines.length; i++) {
-    try {
-      const [itemDate, itemTitle, itemId, itemTrail] = parseItem(lines[i]);
-      const ind = itemTrail.indexOf(level)
-      if (ind < 0)  // once the trail ends
-        break
-      itemTrail.splice(ind, 1)
-      lines[i] = formatItem(itemDate, itemTitle, itemId, itemTrail, trailFormat);
-    } catch {
-      console.log(`cleanNewTrail: failed on line ${i}:\n${lines[i]}`);
+    const [itemDate, itemTitle, itemId, itemTrail, error] = parseItem(lines[i]);
+    if (error) {
+      if (DEBUG) console.log(`cleanNewTrail: failed on line ${i}:\n${lines[i]}`);
+      continue;
     }
+    const ind = itemTrail.indexOf(level);
+    if (ind < 0)  // once the trail ends
+      break
+    itemTrail.splice(ind, 1);
+    lines[i] = formatItem(itemDate, itemTitle, itemId, itemTrail, trailFormat);
   }
   return lines.join('\n');
 }
@@ -223,8 +236,8 @@ function cleanOldHist(body: string, newItemDate: Date, maxHistDays: number): str
  */
 async function fixUntitledItem(body: string, trailFormat: number): Promise<string> {
   const ind = body.search('\n');
-  let [itemDate, itemTitle, itemId, itemTrail] = parseItem(body.slice(0, ind));
-  if (itemTitle != 'Untitled')
+  let [itemDate, itemTitle, itemId, itemTrail, error] = parseItem(body.slice(0, ind));
+  if ((itemTitle != 'Untitled') || (error))
     return body
 
   body = body.slice(ind + 1);  // remove untitled item
@@ -234,7 +247,7 @@ async function fixUntitledItem(body: string, trailFormat: number): Promise<strin
       if (note.title == '') note.title = 'Untitled';
     body = formatItem(itemDate, note.title, itemId, itemTrail, trailFormat) + '\n' + body;
   } catch {
-    console.log('fixUntitledItem: failed to open untitled note');
+    if (DEBUG) console.log('fixUntitledItem: failed to open untitled note');
   }
 
   return body
