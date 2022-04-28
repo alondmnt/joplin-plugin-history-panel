@@ -289,7 +289,38 @@ export function getSettingsSection(settings: HistSettings): Record<string, Setti
 
 export async function setFolders(exclude: boolean, folderId: string, params: HistSettings) {
   params.excludeFolders.delete('');  // left when settings field is empty
-  let foundSet = new Set() as Set<string>;
+  const T = await getFolderTree();  // folderId: childrenIds
+  let q = ['root'];
+  let folder: string;
+  let found = false;
+
+  // breadth-first search
+  while (q.length) {
+    folder = q.shift();
+    if (folderId == folder){
+      // restart queue and start accumulating
+      found = true;
+      q = [];
+    }
+    if (T.has(folder))
+      q.push(...T.get(folder));
+
+    if (!found)
+      continue
+
+    if (exclude) {
+      params.excludeFolders.add(folder);
+    } else {
+      params.excludeFolders.delete(folder);
+    }
+  }
+
+  await joplin.settings.setValue('histExcludeFolders',
+    Array(...params.excludeFolders).toString());
+}
+
+async function getFolderTree(): Promise<Map<string, string[]>> {
+  let T = new Map() as Map<string, string[]>;  // folderId: childrenIds
   let pageNum = 1;
   let hasMore = true;
 
@@ -299,21 +330,17 @@ export async function setFolders(exclude: boolean, folderId: string, params: His
     hasMore = has_more;
 
     for (const folder of items) {
-      // win: either we found the query folder
-      // or one of its children
-      if ((folderId != folder.id) &&
-          !foundSet.has(folder.parent_id))
+      if (!folder.id)
         continue
+      if (!folder.parent_id)
+        folder.parent_id = 'root';
 
-      foundSet.add(folder.id);
-      if (exclude) {
-        params.excludeFolders.add(folder.id);
+      if (!T.has(folder.parent_id)) {
+        T.set(folder.parent_id, [folder.id]);
       } else {
-        params.excludeFolders.delete(folder.id);
+        T.get(folder.parent_id).push(folder.id);
       }
     }
   }
-
-  await joplin.settings.setValue('histExcludeFolders',
-    Array(...params.excludeFolders).toString());
+  return T
 }
