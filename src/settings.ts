@@ -5,6 +5,7 @@ export interface HistSettings {
   histNoteId: string;
   excludeNotes: Set<string>;
   excludeFolders: Set<string>;
+  excludeToDo: boolean;
   secBetweenItems: number;
   maxDays: number;
   panelTitle: string;
@@ -55,6 +56,7 @@ export async function updateSettings(settings: HistSettings) {
   settings.histNoteId = await joplin.settings.value('histNoteId');
   settings.excludeNotes = new Set((await joplin.settings.value('histExcludeNotes')).split(','));
   settings.excludeFolders = new Set((await joplin.settings.value('histExcludeFolders')).split(','));
+  settings.excludeToDo = (await joplin.settings.value('histExcludeToDo'));
   settings.secBetweenItems = await joplin.settings.value('histSecBetweenItems');
   settings.maxDays = await joplin.settings.value('histMaxDays');
   settings.panelTitle = await joplin.settings.value('histPanelTitle');
@@ -95,6 +97,14 @@ export function getSettingsSection(settings: HistSettings): Record<string, Setti
       public: true,
       label: 'History: Days of history to keep',
       description: 'Enter 0 for eternity'
+    },
+
+    'histExcludeToDo': {
+      value: settings.excludeToDo,
+      type: SettingItemType.Bool,
+      section: 'HistoryPanel',
+      public: true,
+      label: 'History: Exclude to-do notes',
     },
 
     'histPanelTitle': {
