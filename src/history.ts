@@ -28,7 +28,9 @@ export default async function addHistItem(params: HistSettings) {
     if (DEBUG) console.log('addHistItem: failed to get selected note');
     return;
   }
-  if ((note.id == params.histNoteId) || params.excludeNotes.has(note.id)) return;
+  if ((note.id == params.histNoteId) ||
+      params.excludeNotes.has(note.id) ||
+      params.excludeFolders.has(note.parent_id)) return;
 
   // get history note
   let histNote;

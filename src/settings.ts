@@ -4,6 +4,7 @@ import { SettingItem, SettingItemType } from 'api/types';
 export interface HistSettings {
   histNoteId: string;
   excludeNotes: Set<string>;
+  excludeFolders: Set<string>;
   secBetweenItems: number;
   maxDays: number;
   panelTitle: string;
@@ -53,6 +54,7 @@ export enum freqOpen {
 export async function updateSettings(settings: HistSettings) {
   settings.histNoteId = await joplin.settings.value('histNoteId');
   settings.excludeNotes = new Set((await joplin.settings.value('histExcludeNotes')).split(','));
+  settings.excludeFolders = new Set((await joplin.settings.value('histExcludeFolders')).split(','));
   settings.secBetweenItems = await joplin.settings.value('histSecBetweenItems');
   settings.maxDays = await joplin.settings.value('histMaxDays');
   settings.panelTitle = await joplin.settings.value('histPanelTitle');
@@ -254,6 +256,16 @@ export function getSettingsSection(settings: HistSettings): Record<string, Setti
       description: 'Comma-separated note IDs. Use Tools->History->Exclude note from history.'
     },
 
+    'histExcludeFolders': {
+      advanced: true,
+      value: Array(...settings.excludeFolders).toString(),
+      type: SettingItemType.String,
+      section: 'HistoryPanel',
+      public: true,
+      label: 'History: Excluded notebooks',
+      description: 'Comma-separated notebook IDs. Use Tools->History->Exclude notebook from history.'
+    },
+
     'histTrailColors': {
       advanced: true,
       value: settings.trailColors.join(','),
@@ -273,4 +285,35 @@ export function getSettingsSection(settings: HistSettings): Record<string, Setti
       label: 'Panel: Stylesheet',
     },
   }
+}
+
+export async function setFolders(exclude: boolean, folderId: string, params: HistSettings) {
+  params.excludeFolders.delete('');  // left when settings field is empty
+  let foundSet = new Set() as Set<string>;
+  let pageNum = 1;
+  let hasMore = true;
+
+  while (hasMore) {
+    const { items, has_more } = await joplin.data.get(
+      ['folders'], { page: pageNum++ });
+    hasMore = has_more;
+
+    for (const folder of items) {
+      // win: either we found the query folder
+      // or one of its children
+      if ((folderId != folder.id) &&
+          !foundSet.has(folder.parent_id))
+        continue
+
+      foundSet.add(folder.id);
+      if (exclude) {
+        params.excludeFolders.add(folder.id);
+      } else {
+        params.excludeFolders.delete(folder.id);
+      }
+    }
+  }
+
+  await joplin.settings.setValue('histExcludeFolders',
+    Array(...params.excludeFolders).toString());
 }

@@ -2,12 +2,13 @@ import joplin from 'api';
 import { MenuItemLocation, ToolbarButtonLocation } from 'api/types';
 import addHistItem from './history';
 import { HistSettings, getSettingsSection, updateSettings,
-    trailFormat, freqOpen, freqLoc, freqScope } from './settings'
+    trailFormat, freqOpen, freqLoc, freqScope, setFolders } from './settings'
 import updateHistView from './panel'
 
 const settings: HistSettings = {
   histNoteId: '',
   excludeNotes: new Set() as Set<string>,
+  excludeFolders: new Set() as Set<string>,
   secBetweenItems: 0,
   maxDays: 90,
   panelTitle: 'HISTORY',
@@ -80,6 +81,28 @@ joplin.plugins.register({
       },
     });
 
+    await joplin.commands.register({
+      name: 'setHistExcludeFolder',
+      label: 'Exclude notebook from history',
+      execute: async () => {
+        const folder = await joplin.workspace.selectedFolder();
+        if (folder == undefined) return;
+
+        setFolders(true, folder.id, settings);
+      },
+    });
+
+    await joplin.commands.register({
+      name: 'setHistIncludeFolder',
+      label: 'Include notebook in history',
+      execute: async () => {
+        const folder = await joplin.workspace.selectedFolder();
+        if (folder == undefined) return;
+
+        setFolders(false, folder.id, settings);
+      },
+    });
+
     await joplin.views.menus.create('histMenu', 'History', [
       {
         label: 'menuHistNote',
@@ -92,6 +115,14 @@ joplin.plugins.register({
       {
         label: 'menuHistInclude',
         commandName: 'setHistInclude',
+      },
+      {
+        label: 'menuHistExcludeFolder',
+        commandName: 'setHistExcludeFolder',
+      },
+      {
+        label: 'menuHistIncludeFolder',
+        commandName: 'setHistIncludeFolder',
       },
     ], MenuItemLocation.Tools);
 
