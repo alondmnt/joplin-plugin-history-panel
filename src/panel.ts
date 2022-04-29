@@ -200,7 +200,7 @@ function getStatsHtml(itemCounter: Map<string, number>,
       </p>
     `);
   });
-  itemHtml.push('</details>')
+  itemHtml.push('</details>');
   return itemHtml.join('\n');
 }
 
@@ -209,11 +209,11 @@ function getDateDay(date: Date): number {
 }
 
 function getMonthString(date: Date): string {
-  return date.toUTCString().split(' ')[2] + ' ' + getYearString(date)
+  return date.toUTCString().split(' ')[2] + ' ' + getYearString(date);
 }
 
 function getYearString(date: Date): string {
-  return date.toUTCString().split(' ')[3]
+  return date.toUTCString().split(' ')[3];
 }
 
 // From https://stackoverflow.com/a/6234804/561309

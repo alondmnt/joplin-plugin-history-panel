@@ -306,7 +306,7 @@ export function getSettingsSection(settings: HistSettings): Record<string, Setti
       public: true,
       label: 'Panel: Stylesheet',
     },
-  }
+  };
 }
 
 export async function setFolders(exclude: boolean, folderId: string, params: HistSettings) {
@@ -364,5 +364,5 @@ async function getFolderTree(): Promise<Map<string, string[]>> {
       }
     }
   }
-  return T
+  return T;
 }
