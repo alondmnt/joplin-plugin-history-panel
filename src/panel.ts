@@ -41,6 +41,7 @@ function getItemHtml(lines: string[], itemMap: Map<string,
     [string[], Map<string, number>] {
   let foldTag: string;
   let plotTag: string;
+  let todoTag: string;
   const dateScope = new Set(['today']);
   const activeTrail = new Set() as Set<number>;
   let itemCounter = new Map<string, number>();
@@ -52,6 +53,10 @@ function getItemHtml(lines: string[], itemMap: Map<string,
     if (error) continue;
     foldTag = getFoldTag(item, dateScope, params.panelTextSize);
     plotTag = getPlotTag(item.trails, activeTrail, params);
+    todoTag = '';
+    if (item.is_todo)
+      todoTag = '☑︎ ';
+
     if (params.freqLoc != freqLoc.hide)
       updateStats(item, itemCounter, itemMap, dateScope, params);
 
@@ -60,7 +65,7 @@ function getItemHtml(lines: string[], itemMap: Map<string,
             <p class="hist-item" style="font-size: ${params.panelTextSize}px; height: ${params.plotSize[1]}px">
               ${plotTag}
               <a class="hist-item" href="#" data-slug="${item.id}">
-                ${escapeHtml(item.title)}
+                ${todoTag}${escapeHtml(item.title)}
               </a>
             </p>
           `);

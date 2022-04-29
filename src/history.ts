@@ -11,6 +11,7 @@ export interface HistItem {
   id: string;
   title: string;
   trails: number[];
+  is_todo: boolean;
 }
 
 /**
@@ -48,6 +49,7 @@ export default async function addHistItem(params: HistSettings) {
     id: note.id,
     title: note.title,
     trails: [],
+    is_todo: note.is_todo,
   }
   if (isDuplicate(histNote.body, note, item.date))  // do not duplicate the last item
     return
@@ -137,16 +139,19 @@ async function addTrailToItem(noteDest: any, lines: string[], i: number,
 function formatItem(item: HistItem, trailFormat: number): string {
   let trailString = '';
   let trail = item.trails.sort();
+  let todoString = '';
   if (trailFormat == 0)
       trail = trail.reverse();
   if (trail.length > 0)
     trailString = ` {${trail.map(String).join(',')}}`;
+  if (item.is_todo)
+    todoString = ' X';
 
   try {
     if (trailFormat == 0) {
-      return `${item.date.toISOString()}${trailString} [${item.title}](:/${item.id})`;
+      return `${item.date.toISOString()}${trailString} [${item.title}](:/${item.id})${todoString}`;
     } else {
-      return `${item.date.toISOString()} [${item.title}](:/${item.id})${trailString}`;
+      return `${item.date.toISOString()} [${item.title}](:/${item.id})${trailString}${todoString}`;
     }
   } catch {
     if (DEBUG) console.log(`formatItem: bad data = ${item}`);
@@ -163,6 +168,7 @@ export function parseItem(line: string): [HistItem, boolean] {
     id: '',
     title: '',
     trails: [],
+    is_todo: false,
   };
 
   try {
@@ -179,6 +185,8 @@ export function parseItem(line: string): [HistItem, boolean] {
     const linkMatch = line.match(linkExp);
     if (linkMatch)
       item.trails = linkMatch[0].slice(1, -1).split(',').map(Number);
+
+    item.is_todo = line.slice(-1) == 'X';
 
     return [item, false];
   } catch {
