@@ -35,6 +35,11 @@ export default async function addHistItem(params: HistSettings) {
   if ((params.includeType == includeType.onlyNote) && note.is_todo) return;
   if ((params.includeType == includeType.onlyToDo) && !note.is_todo) return;
 
+  const noteTags: string[] =
+		(await joplin.data.get(['notes', note.id, 'tags'], { fields: ['title'] }))
+    .items.map(t => t.title);
+  if (setDiff(params.excludeTags, new Set(noteTags)).size < params.excludeTags.size) return;
+
   // get history note
   let histNote;
   try {
@@ -301,7 +306,7 @@ function setUnion(setA: Set<number>, setB: Set<number>): Set<number> {
   return _union
 }
 
-function setDiff(setA: Set<number>, setB: Set<number>): Set<number> {
+function setDiff(setA: Set<any>, setB: Set<any>): Set<any> {
   let _difference = new Set(setA);
   for (let elem of setB)
     _difference.delete(elem);

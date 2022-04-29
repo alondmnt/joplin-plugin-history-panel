@@ -9,6 +9,7 @@ const settings: HistSettings = {
   histNoteId: '',
   excludeNotes: new Set() as Set<string>,
   excludeFolders: new Set() as Set<string>,
+  excludeTags: new Set as Set<string>,
   includeType: includeType.both,
   secBetweenItems: 0,
   maxDays: 90,

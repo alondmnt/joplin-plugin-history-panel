@@ -5,6 +5,7 @@ export interface HistSettings {
   histNoteId: string;
   excludeNotes: Set<string>;
   excludeFolders: Set<string>;
+  excludeTags: Set<string>;
   includeType: includeType;
   secBetweenItems: number;
   maxDays: number;
@@ -62,6 +63,7 @@ export async function updateSettings(settings: HistSettings) {
   settings.histNoteId = await joplin.settings.value('histNoteId');
   settings.excludeNotes = new Set((await joplin.settings.value('histExcludeNotes')).split(','));
   settings.excludeFolders = new Set((await joplin.settings.value('histExcludeFolders')).split(','));
+  settings.excludeTags = new Set((await joplin.settings.value('histExcludeTags')).split(','));
   settings.includeType = (await joplin.settings.value('histIncludeType'));
   settings.secBetweenItems = await joplin.settings.value('histSecBetweenItems');
   settings.maxDays = await joplin.settings.value('histMaxDays');
@@ -286,6 +288,16 @@ export function getSettingsSection(settings: HistSettings): Record<string, Setti
       public: true,
       label: 'History: Excluded notebooks',
       description: 'Comma-separated notebook IDs. Use Tools->History->Exclude notebook from history.'
+    },
+
+    'histExcludeTags': {
+      advanced: true,
+      value: Array(...settings.excludeTags).toString(),
+      type: SettingItemType.String,
+      section: 'HistoryPanel',
+      public: true,
+      label: 'History: Excluded tags',
+      description: 'Comma-separated tags (no #)'
     },
 
     'histTrailColors': {
