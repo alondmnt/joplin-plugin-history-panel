@@ -7,9 +7,9 @@ import updateHistView from './panel'
 
 const settings: HistSettings = {
   histNoteId: '',
-  excludeNotes: new Set() as Set<string>,
-  excludeFolders: new Set() as Set<string>,
-  excludeTags: new Set as Set<string>,
+  excludeNotes: new Set(),
+  excludeFolders: new Set(),
+  excludeTags: new Set(['exclude.from.history']),
   includeType: includeType.both,
   secBetweenItems: 0,
   maxDays: 90,
