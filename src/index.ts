@@ -2,14 +2,14 @@ import joplin from 'api';
 import { MenuItemLocation, ToolbarButtonLocation } from 'api/types';
 import addHistItem from './history';
 import { HistSettings, getSettingsSection, updateSettings,
-    trailFormat, freqOpen, freqLoc, freqScope, setFolders } from './settings'
+    trailFormat, freqOpen, freqLoc, freqScope, setFolders, includeType } from './settings'
 import updateHistView from './panel'
 
 const settings: HistSettings = {
   histNoteId: '',
   excludeNotes: new Set() as Set<string>,
   excludeFolders: new Set() as Set<string>,
-  excludeToDo: false,
+  includeType: includeType.both,
   secBetweenItems: 0,
   maxDays: 90,
   panelTitle: 'HISTORY',

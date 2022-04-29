@@ -1,5 +1,5 @@
 import joplin from 'api';
-import { HistSettings } from './settings';
+import { HistSettings, includeType } from './settings';
 
 const DEBUG = false;
 
@@ -32,7 +32,8 @@ export default async function addHistItem(params: HistSettings) {
   if (params.histNoteId == note.id) return;
   if (params.excludeNotes.has(note.id)) return;
   if (params.excludeFolders.has(note.parent_id)) return;
-  if (params.excludeToDo && note.is_todo) return;
+  if ((params.includeType == includeType.onlyNote) && note.is_todo) return;
+  if ((params.includeType == includeType.onlyToDo) && !note.is_todo) return;
 
   // get history note
   let histNote;
