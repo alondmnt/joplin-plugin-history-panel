@@ -2,11 +2,13 @@ import joplin from 'api';
 import { SettingItem, SettingItemType } from 'api/types';
 
 export interface HistSettings {
+  currentLine: number;
   histNoteId: string;
   excludeNotes: Set<string>;
   excludeFolders: Set<string>;
   excludeTags: Set<string>;
   includeType: includeType;
+  detectBacktrack: boolean;
   secBetweenItems: number;
   maxDays: number;
   panelTitle: string;
@@ -65,6 +67,7 @@ export async function updateSettings(settings: HistSettings) {
   settings.excludeFolders = new Set((await joplin.settings.value('histExcludeFolders')).split(','));
   settings.excludeTags = new Set((await joplin.settings.value('histExcludeTags')).split(','));
   settings.includeType = (await joplin.settings.value('histIncludeType'));
+  settings.detectBacktrack = (await joplin.settings.value('histDetectBacktrack'));
   settings.secBetweenItems = await joplin.settings.value('histSecBetweenItems');
   settings.maxDays = await joplin.settings.value('histMaxDays');
   settings.panelTitle = await joplin.settings.value('histPanelTitle');
@@ -105,6 +108,15 @@ export function getSettingsSection(settings: HistSettings): Record<string, Setti
       public: true,
       label: 'History: Days of history to keep',
       description: 'Enter 0 for eternity',
+    },
+
+    'histDetectBacktrack': {
+      value: settings.detectBacktrack,
+      type: SettingItemType.Bool,
+      section: 'HistoryPanel',
+      public: true,
+      label: 'History: Detect backtracking',
+      description: 'i.e., browsing in history',
     },
 
     'histIncludeType': {

@@ -1,4 +1,5 @@
 import joplin from 'api';
+import { stringify } from 'querystring';
 import { HistItem, parseItem } from './history';
 import { HistSettings, freqScope, freqLoc, freqOpen } from './settings';
 
@@ -39,9 +40,6 @@ async function getHistHtml(maxItems: number, params: HistSettings): Promise<stri
 function getItemHtml(lines: string[], itemMap: Map<string,
     string>, maxItems: number, params: HistSettings):
     [string[], Map<string, number>] {
-  let foldTag: string;
-  let plotTag: string;
-  let todoTag: string;
   const dateScope = new Set(['today']);
   const activeTrail = new Set() as Set<number>;
   let itemCounter = new Map<string, number>();
@@ -51,11 +49,10 @@ function getItemHtml(lines: string[], itemMap: Map<string,
   for (let i = 0; i < N; i++) {
     const [item, error] = parseItem(lines[i]);
     if (error) continue;
-    foldTag = getFoldTag(item, dateScope, params.panelTextSize);
-    plotTag = getPlotTag(item.trails, activeTrail, params);
-    todoTag = '';
-    if (item.is_todo)
-      todoTag = '☑︎ ';
+    const foldTag = getFoldTag(item, dateScope, params.panelTextSize);
+    const plotTag = getPlotTag(item.trails, activeTrail, params);
+    const [backTagStart, backTagStop] = getBackTag(i, params);
+    const todoTag = getTodoTag(item, params);
 
     if (params.freqLoc != freqLoc.hide)
       updateStats(item, itemCounter, itemMap, dateScope, params);
@@ -65,7 +62,7 @@ function getItemHtml(lines: string[], itemMap: Map<string,
             <p class="hist-item" style="font-size: ${params.panelTextSize}px; height: ${params.plotSize[1]}px">
               ${plotTag}
               <a class="hist-item" href="#" data-slug="${item.id}">
-                ${todoTag}${escapeHtml(item.title)}
+                ${backTagStart}${todoTag}${escapeHtml(item.title)}${backTagStop}
               </a>
             </p>
           `);
@@ -138,6 +135,18 @@ function getPlotTag(trail: number[], activeTrail: Set<number>, params: HistSetti
     }
   }
   return plot + '</svg>';
+}
+
+function getBackTag(lineInd: number, params: HistSettings): [string, string] {
+  if ((params.currentLine > 0) && (lineInd == params.currentLine))
+    return ['<strong>', '</strong>'];
+  return ['', ''];
+}
+
+function getTodoTag(item: HistItem, params: HistSettings) {
+  if (item.is_todo)
+    return '☑︎ ';
+  return '';
 }
 
 function updateStats(item: HistItem, itemCounter: Map<string, number>,

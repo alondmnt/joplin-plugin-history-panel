@@ -6,11 +6,13 @@ import { HistSettings, getSettingsSection, updateSettings,
 import updateHistView from './panel'
 
 const settings: HistSettings = {
+  currentLine: 0,
   histNoteId: '',
   excludeNotes: new Set(),
   excludeFolders: new Set(),
   excludeTags: new Set(['exclude.from.history']),
   includeType: includeType.both,
+  detectBacktrack: true,
   secBetweenItems: 0,
   maxDays: 90,
   panelTitle: 'HISTORY',

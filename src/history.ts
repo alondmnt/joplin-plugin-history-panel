@@ -58,6 +58,9 @@ export default async function addHistItem(params: HistSettings) {
     trails: [],
     is_todo: note.is_todo,
   }
+  if (params.detectBacktrack && isBacktrack(history, item, params))  // when backtracking only update the panel
+    return
+
   if (isDuplicate(history[0], item))  // do not duplicate the last item
     return
 
@@ -196,9 +199,37 @@ export function parseItem(line: string): [HistItem, boolean] {
   }
 }
 
+/**
+ * tries to detect backtracking (browsing through history).
+ * when ambiguous, prefers a step forward.
+ */
+function isBacktrack(history: string[], item: HistItem, params: HistSettings): boolean {
+  const backInd = Math.min(params.currentLine + 1, history.length - 1);
+  const [backItem, error1] = parseItem(history[backInd]);
+  if (!error1 && (backItem.id == item.id)) {
+    params.currentLine = backInd;
+    return true;
+  }
+
+  const nextInd = params.currentLine - 1;
+  if (nextInd < 0) {
+    params.currentLine = 0;
+    return false;
+  }
+
+  const [nextItem, error2] = parseItem(history[nextInd]);
+  if (!error2 && (nextItem.id == item.id)) {
+    params.currentLine = nextInd;
+    return true;
+  }
+
+  params.currentLine = 0;
+  return false;
+}
+
 function isDuplicate(line: string, newItem: HistItem): boolean {
   const [lastItem, error] = parseItem(line);
-  if (error) return false
+  if (error) return false;
   return (lastItem.id == newItem.id) && (lastItem.date.getDate() == newItem.date.getDate());
 }
 
