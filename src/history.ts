@@ -48,6 +48,7 @@ export default async function addHistItem(params: HistSettings) {
     if (DEBUG) console.log('addHistItem: failed when histNoteId = ' + params.histNoteId);
     return
   }
+  let history = histNote.body.split('\n');
 
   // tidy up history
   const item: HistItem = {
@@ -57,35 +58,32 @@ export default async function addHistItem(params: HistSettings) {
     trails: [],
     is_todo: note.is_todo,
   }
-  if (isDuplicate(histNote.body, note, item.date))  // do not duplicate the last item
+  if (isDuplicate(history[0], item))  // do not duplicate the last item
     return
 
   if (params.secBetweenItems > 0)
-    histNote.body = cleanNewHist(histNote.body, item.date,
+    history = cleanNewHist(history, item.date,
         params.secBetweenItems, params.trailFormat);
 
   if (params.maxDays > 0)
-    histNote.body = cleanOldHist(histNote.body, item.date, params.maxDays);
+    history = cleanOldHist(history, item.date, params.maxDays);
 
-  if (isDuplicate(histNote.body, note, item.date)) {  // do not duplicate the last item
-    await joplin.data.put(['notes', histNote.id], null, { body: histNote.body });
+  if (isDuplicate(history[0], item)) {  // do not duplicate the last item
+    await joplin.data.put(['notes', histNote.id], null, { body: history.join('\n') });
     return
   }
 
-  histNote.body = await fixUntitledItem(histNote.body, params.trailFormat);
+  history = await fixUntitledItem(history, params.trailFormat);
 
   // add new item
-  const newItem = formatItem(item, params.trailFormat) + '\n';
-  histNote.body = newItem + histNote.body;
+  history.unshift(formatItem(item, params.trailFormat));
 
   if (params.trailRecords > 0) {
-    const lines = histNote.body.split('\n');
     const processed = new Set() as Set<string>;
-    await addTrailToItem(note, lines, 0, processed, new Set() as Set<number>, params);
-    histNote.body = lines.join('\n');
+    await addTrailToItem(note, history, 0, processed, new Set() as Set<number>, params);
   }
 
-  await joplin.data.put(['notes', histNote.id], null, { body: histNote.body});
+  await joplin.data.put(['notes', histNote.id], null, { body: history.join('\n')});
 
   const finish = new Date();
   if (DEBUG)
@@ -165,9 +163,6 @@ function formatItem(item: HistItem, trailFormat: number): string {
   }
 }
 
-/**
- * @returns [date, title, id, trail]
- */
 export function parseItem(line: string): [HistItem, boolean] {
   const item: HistItem = {
     date: new Date(),
@@ -201,42 +196,37 @@ export function parseItem(line: string): [HistItem, boolean] {
   }
 }
 
-function isDuplicate(body: string, note: any, date: Date): boolean {
-  const ind = body.search('\n');
-  const [item, error] = parseItem(body.slice(0, ind));
+function isDuplicate(line: string, newItem: HistItem): boolean {
+  const [lastItem, error] = parseItem(line);
   if (error) return false
-  // TODO: if this becomes too slow, skip parseItem and get just the date, id
-  return (item.id == note.id) && (item.date.getDate() == date.getDate());
+  return (lastItem.id == newItem.id) && (lastItem.date.getDate() == newItem.date.getDate());
 }
 
 /**
  * removes history items if they are too recent.
  */
-function cleanNewHist(body: string, newItemDate: Date, minSecBetweenItems: number,
-    trailFormat: number): string {
-  const lastItemDate = new Date(body.slice(0, 24));
+function cleanNewHist(lines: string[], newItemDate: Date, minSecBetweenItems: number,
+    trailFormat: number): string[] {
+  const lastItemDate = new Date(lines[0].slice(0, 24));
   if (newItemDate.getTime() - lastItemDate.getTime() >= 1000*minSecBetweenItems)
-    return body;
+    return lines;
 
   // remove last item from history
-  body = cleanNewTrail(body, trailFormat);
-  const ind = body.search('\n');
-  return body.slice(ind+1);
+  lines = cleanNewTrail(lines, trailFormat);
+  return lines.slice(1);
 }
 
-function cleanNewTrail(body: string, trailFormat: number): string {
-  const ind = body.search('\n');
-  const [item, error] = parseItem(body.slice(0, ind));
+function cleanNewTrail(lines: string[], trailFormat: number): string[] {
+  const [item, error] = parseItem(lines[0]);
   if (item.trails.length == 0)
-    return body;
+    return lines;
 
   const level = item.trails[0];  // last item has at most one trail
 
   if (level == 1) {
-    return body  // last line will be removed by calling function
+    return lines  // last line will be removed by calling function
   }
 
-  const lines = body.split('\n');
   for (let i = 0; i < lines.length; i++) {
     const [item, error] = parseItem(lines[i]);
     if (error) {
@@ -249,45 +239,43 @@ function cleanNewTrail(body: string, trailFormat: number): string {
     item.trails.splice(ind, 1);
     lines[i] = formatItem(item, trailFormat);
   }
-  return lines.join('\n');
+  return lines;
 }
 
 /**
  * removes history items if they are too old.
  */
-function cleanOldHist(body: string, newItemDate: Date, maxHistDays: number): string {
-  const lines = body.split('\n');
+function cleanOldHist(lines: string[], newItemDate: Date, maxHistDays: number): string[] {
   for (var i = lines.length - 1; i >= 0; i--) {
     const itemDate = new Date(lines[i].split(' ')[0]).getTime();
     if ((newItemDate.getTime() - itemDate) <= maxHistDays*1000*60*60*24)
       break;
   }
-  return lines.slice(0, i+1).join('\n');
+  return lines.slice(0, i+1);
 }
 
 /**
  * if the last item is untitled, which happens in the case of a
  * newly created note, this function tries to update its title.
  */
-async function fixUntitledItem(body: string, trailFormat: number): Promise<string> {
-  const ind = body.search('\n');
-  let [item, error] = parseItem(body.slice(0, ind));
+async function fixUntitledItem(lines: string[], trailFormat: number): Promise<string[]> {
+  let [item, error] = parseItem(lines[0]);
   if ((item.title != 'Untitled') || (error))
-    return body
+    return lines
 
-  body = body.slice(ind + 1);  // remove untitled item
   try {
     const note = await joplin.data.get(['notes', item.id], { fields: ['title'] });
     if (note) {
       if (note.title == '') item.title = 'Untitled';
       else item.title = note.title;
     }
-    body = formatItem(item, trailFormat) + '\n' + body;
+    lines[0] = formatItem(item, trailFormat);  // rename untitled item
   } catch {
+    lines.shift();  // remove untitled item
     if (DEBUG) console.log('fixUntitledItem: failed to open untitled note');
   }
 
-  return body
+  return lines
 }
 
 function isLinked(body1: string, id1: string, body2: string, id2: string, backlinks: boolean): boolean {
