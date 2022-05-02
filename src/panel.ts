@@ -1,5 +1,4 @@
 import joplin from 'api';
-import { stringify } from 'querystring';
 import { HistItem, parseItem } from './history';
 import { HistSettings, freqScope, freqLoc, freqOpen } from './settings';
 
@@ -13,8 +12,6 @@ async function getHistHtml(maxItems: number, params: HistSettings): Promise<stri
     return 'Please set a history note (from the Tools menu) to start logging';
   }
 
-  const first_sec = `<details open class="hist-section"><summary class="hist-section" style="font-size: ${params.panelTextSize}px">Today</summary>`;
-
   let itemMap = new Map<string, string>();
 
   const lines = histNote.body.split('\n')
@@ -27,7 +24,7 @@ async function getHistHtml(maxItems: number, params: HistSettings): Promise<stri
   let allHtml: string[] = [];
   if (params.freqLoc == freqLoc.top)
     allHtml.push(statsHtml);
-  allHtml = allHtml.concat([first_sec], itemHtml);
+  allHtml = allHtml.concat(itemHtml);
   if (params.freqLoc == freqLoc.bottom)
     allHtml.push(statsHtml);
 
@@ -44,12 +41,16 @@ function getItemHtml(lines: string[], itemMap: Map<string,
   const activeTrail = new Set() as Set<number>;
   let itemCounter = new Map<string, number>();
   let itemHtml: string[] = [];
+  const sectIndex: number[] = [];  // keep a tab on all array indices that contain sections
   const N = Math.min(maxItems, lines.length);
+
+  itemHtml.push(`<details open class="hist-section"><summary class="hist-section" style="font-size: ${params.panelTextSize}px">Today</summary>`);
+  sectIndex.push(0);
 
   for (let i = 0; i < N; i++) {
     const [item, error] = parseItem(lines[i]);
     if (error) continue;
-    const foldTag = getFoldTag(item, dateScope, params.panelTextSize);
+    const foldTag = getFoldTag(item, dateScope, sectIndex, i, params);
     const plotTag = getPlotTag(item.trails, activeTrail, params);
     const [backTagStart, backTagStop] = getBackTag(i, params);
     const todoTag = getTodoTag(item, params);
@@ -61,29 +62,43 @@ function getItemHtml(lines: string[], itemMap: Map<string,
             ${foldTag}
             <p class="hist-item" style="font-size: ${params.panelTextSize}px; height: ${params.plotSize[1]}px">
               ${plotTag}
+              ${backTagStart}
               <a class="hist-item" href="#" data-slug="${item.id}">
-                ${backTagStart}${todoTag}${escapeHtml(item.title)}${backTagStop}
+                ${todoTag}${escapeHtml(item.title)}
               </a>
+              ${backTagStop}
             </p>
           `);
   }
   itemHtml.push('</details>');
+
+  // close all sections except the one that contains currentLine
+  for (let i=0; i<sectIndex.length-1; i++) {
+    if (sectIndex[i+1] > params.currentLine + 1)
+      break
+    itemHtml[sectIndex[i]] = itemHtml[sectIndex[i]].replace('details open', 'details')
+  }
+
   return [itemHtml, itemCounter];
 }
 
-function getFoldTag(item: HistItem, dateScope: Set<string>, fontSize: number): string {
+function getFoldTag(item: HistItem, dateScope: Set<string>,
+    sectIndex: number[], currentInd: number, params: HistSettings): string {
   /* whenever we pass a threshold, we need to close the previous folding section
      and start a new one */
   const now = new Date();
   const dayDiff = getDateDay(now) - getDateDay(item.date);
+  const state = (currentInd <= params.currentLine)? 'open':'';
   if (!dateScope.has('yesterday') && (dayDiff == 1)) {
     dateScope.add('yesterday');
-    return `</details><details class="hist-section"><summary class="hist-section" style="font-size: ${fontSize}px">Yesterday</summary>`;
+    sectIndex.push(currentInd + 1);
+    return `</details><details ${state} class="hist-section"><summary class="hist-section" style="font-size: ${params.panelTextSize}px">Yesterday</summary>`;
   }
   if (!dateScope.has('week') &&
       (dayDiff > 1) && (dayDiff <= 6)) {
     dateScope.add('week');
-    return `</details><details class="hist-section"><summary class="hist-section" style="font-size: ${fontSize}px">Last 7 days</summary>`;
+    sectIndex.push(currentInd + 1);
+    return `</details><details ${state} class="hist-section"><summary class="hist-section" style="font-size: ${params.panelTextSize}px">Last 7 days</summary>`;
   }
 
   let strMonth = getMonthString(item.date);
@@ -91,7 +106,8 @@ function getFoldTag(item: HistItem, dateScope: Set<string>, fontSize: number): s
     strMonth = 'This month';
   if (!dateScope.has(strMonth) && (dayDiff > 6)) {
     dateScope.add(strMonth);
-    return `</details><details class="hist-section"><summary class="hist-section" style="font-size: ${fontSize}px">${strMonth}</summary>`;
+    sectIndex.push(currentInd + 1);
+    return `</details><details ${state} class="hist-section"><summary class="hist-section" style="font-size: ${params.panelTextSize}px">${strMonth}</summary>`;
   }
 
   return '';
