@@ -91,7 +91,7 @@ export default async function addHistItem(params: HistSettings) {
   if (DEBUG)
     console.log('addHistItem: ' + (finish.getTime() - item.date.getTime()) + 'ms');
 
-  await joplin.data.put(['notes', histNote.id], null, { body: history.join('\n')});
+  await joplin.data.put(['notes', histNote.id], null, { body: history.join('\n') });
 }
 
 /**
@@ -224,7 +224,14 @@ function isBacktrack(history: string[], item: HistItem, params: HistSettings): b
     return true;
   }
 
+  // reset to 0
   params.currentLine = 0;
+  const [lastItem, error3] = parseItem(history[1]);
+  if (!error3 && (lastItem.id == item.id)) {
+    params.currentLine += 1;
+    return true;
+  }
+
   return false;
 }
 
