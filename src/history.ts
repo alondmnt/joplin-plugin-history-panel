@@ -34,6 +34,7 @@ export default async function addHistItem(params: HistSettings) {
   if (params.excludeFolders.has(note.parent_id)) return;
   if ((params.includeType == includeType.onlyNote) && note.is_todo) return;
   if ((params.includeType == includeType.onlyToDo) && !note.is_todo) return;
+  if (note.is_conflict) return;
 
   const noteTags: string[] =
 		(await joplin.data.get(['notes', note.id, 'tags'], { fields: ['title'] }))
