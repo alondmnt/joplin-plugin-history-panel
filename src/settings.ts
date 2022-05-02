@@ -9,6 +9,7 @@ export interface HistSettings {
   excludeTags: Set<string>;
   includeType: includeType;
   detectBacktrack: boolean;
+  markCurrentLine: boolean;
   secBetweenItems: number;
   maxDays: number;
   panelTitle: string;
@@ -68,6 +69,7 @@ export async function updateSettings(settings: HistSettings) {
   settings.excludeTags = new Set((await joplin.settings.value('histExcludeTags')).split(','));
   settings.includeType = (await joplin.settings.value('histIncludeType'));
   settings.detectBacktrack = (await joplin.settings.value('histDetectBacktrack'));
+  settings.markCurrentLine = (await joplin.settings.value('histMarkCurrentLine'));
   settings.secBetweenItems = await joplin.settings.value('histSecBetweenItems');
   settings.maxDays = await joplin.settings.value('histMaxDays');
   settings.panelTitle = await joplin.settings.value('histPanelTitle');
@@ -157,6 +159,14 @@ export function getSettingsSection(settings: HistSettings): Record<string, Setti
       section: 'HistoryPanel',
       public: true,
       label: 'Panel: Text font size (px)',
+    },
+
+    'histMarkCurrentLine': {
+      value: settings.markCurrentLine,
+      type: SettingItemType.Bool,
+      section: 'HistoryPanel',
+      public: true,
+      label: 'Panel: Highlight clicked item',
     },
 
     'histTrailDisplay': {

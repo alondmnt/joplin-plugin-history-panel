@@ -86,11 +86,11 @@ export default async function addHistItem(params: HistSettings) {
     await addTrailToItem(note, history, 0, processed, new Set() as Set<number>, params);
   }
 
-  await joplin.data.put(['notes', histNote.id], null, { body: history.join('\n')});
-
   const finish = new Date();
   if (DEBUG)
     console.log('addHistItem: ' + (finish.getTime() - item.date.getTime()) + 'ms');
+
+  await joplin.data.put(['notes', histNote.id], null, { body: history.join('\n')});
 }
 
 /**

@@ -5,6 +5,7 @@ document.addEventListener('click', event => {
 		webviewApi.postMessage({
 			name: 'openHistory',
 			hash: element.dataset.slug,
+			line: element.dataset.line,
 		});
 	}
 	if (element.className === 'hist-loader') {

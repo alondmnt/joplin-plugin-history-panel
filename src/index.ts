@@ -13,6 +13,7 @@ const settings: HistSettings = {
   excludeTags: new Set(['exclude.from.history']),
   includeType: includeType.both,
   detectBacktrack: true,
+  markCurrentLine: false,
   secBetweenItems: 0,
   maxDays: 90,
   panelTitle: 'HISTORY',
@@ -171,6 +172,8 @@ joplin.plugins.register({
     await joplin.views.panels.onMessage(panel, (message) => {
       if (message.name === 'openHistory') {
         joplin.commands.execute('openNote', message.hash);
+        if (settings.markCurrentLine)
+          settings.currentLine = Number(message.line) - 1;
       }
       if (message.name === 'loadHistory') {
         updateHistView(panel, settings, true);

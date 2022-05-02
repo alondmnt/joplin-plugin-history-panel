@@ -63,7 +63,7 @@ function getItemHtml(lines: string[], itemMap: Map<string,
             <p class="hist-item" style="font-size: ${params.panelTextSize}px; height: ${params.plotSize[1]}px">
               ${plotTag}
               ${backTagStart}
-              <a class="hist-item" href="#" data-slug="${item.id}">
+              <a class="hist-item" href="#" data-slug="${item.id}" data-line="${i}">
                 ${todoTag}${escapeHtml(item.title)}
               </a>
               ${backTagStop}
