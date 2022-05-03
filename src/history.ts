@@ -61,6 +61,8 @@ export default async function addHistItem(params: HistSettings) {
   }
   if (params.detectBacktrack && isBacktrack(history, item, params))  // when backtracking only update the panel
     return
+  if (!params.detectBacktrack)
+    params.currentLine = 0;
 
   if (isDuplicate(history[0], item))  // do not duplicate the last item
     return
