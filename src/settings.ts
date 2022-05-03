@@ -112,15 +112,6 @@ export function getSettingsSection(settings: HistSettings): Record<string, Setti
       description: 'Enter 0 for eternity',
     },
 
-    'histDetectBacktrack': {
-      value: settings.detectBacktrack,
-      type: SettingItemType.Bool,
-      section: 'HistoryPanel',
-      public: true,
-      label: 'History: Detect backtracking',
-      description: 'i.e., browsing in history',
-    },
-
     'histIncludeType': {
       value: settings.includeType,
       type: SettingItemType.Int,
@@ -133,6 +124,24 @@ export function getSettingsSection(settings: HistSettings): Record<string, Setti
         '1': 'Notes',
         '2': 'To-Dos',
       }
+    },
+
+    'histDetectBacktrack': {
+      value: settings.detectBacktrack,
+      type: SettingItemType.Bool,
+      section: 'HistoryPanel',
+      public: true,
+      label: 'History: Detect backtracking',
+      description: 'i.e., browsing in history',
+    },
+
+    'histMarkCurrentLine': {
+      value: settings.markCurrentLine,
+      type: SettingItemType.Bool,
+      section: 'HistoryPanel',
+      public: true,
+      label: 'Panel: Highlight clicked item',
+      description: 'Backtracking must be activated'
     },
 
     'histPanelTitle': {
@@ -159,14 +168,6 @@ export function getSettingsSection(settings: HistSettings): Record<string, Setti
       section: 'HistoryPanel',
       public: true,
       label: 'Panel: Text font size (px)',
-    },
-
-    'histMarkCurrentLine': {
-      value: settings.markCurrentLine,
-      type: SettingItemType.Bool,
-      section: 'HistoryPanel',
-      public: true,
-      label: 'Panel: Highlight clicked item',
     },
 
     'histTrailDisplay': {
