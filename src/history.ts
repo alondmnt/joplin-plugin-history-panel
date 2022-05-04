@@ -59,17 +59,18 @@ export default async function addHistItem(params: HistSettings) {
     trails: [],
     is_todo: note.is_todo,
   }
-  if (params.detectBacktrack && isBacktrack(history, item, params))  // when backtracking only update the panel
-    return
-  if (!params.detectBacktrack)
-    params.currentLine = 0;
 
-  if (isDuplicate(history[0], item))  // do not duplicate the last item
+  if (isDuplicate(history[params.currentLine], item))  // do not duplicate the last item
     return
 
   if (params.secBetweenItems > 0)
     history = cleanNewHist(history, item.date,
         params.secBetweenItems, params.trailFormat);
+
+  if (params.detectBacktrack && isBacktrack(history, item, params))  // when backtracking only update the panel
+    return
+  if (!params.detectBacktrack)
+    params.currentLine = 0;
 
   if (params.maxDays > 0)
     history = cleanOldHist(history, item.date, params.maxDays);
