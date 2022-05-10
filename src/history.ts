@@ -67,8 +67,11 @@ export default async function addHistItem(params: HistSettings) {
     history = cleanNewHist(history, item.date,
         params.secBetweenItems, params.trailFormat);
 
-  if (params.detectBacktrack && isBacktrack(history, item, params))  // when backtracking only update the panel
+  if (params.detectBacktrack && isBacktrack(history, item, params)) {
+    await joplin.data.put(['notes', histNote.id], null, { body: history.join('\n') });  // edited by cleanNewHist
     return
+  }  // when backtracking only update the panel
+
   if (!params.detectBacktrack)
     params.currentLine = 0;
 
