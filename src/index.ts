@@ -56,6 +56,9 @@ joplin.plugins.register({
       iconName: 'far fa-hourglass',
       execute: async () => {
         const note = await joplin.workspace.selectedNote();
+        const choice = await joplin.views.dialogs.showMessageBox(
+          `This will set the current note "${note.title}" as the history note, where your logs will be written to. Continue?`);
+        if (choice != 0) { return; }
         await joplin.settings.setValue('histNoteId', note.id);
         updateHistView(panel, settings, false);
       },
