@@ -1,5 +1,7 @@
 # The History Panel (Joplin Plugin)
 
+![downloads](https://img.shields.io/badge/dynamic/json?color=brightgreen&label=downloads&query=%24.totalDownloads&url=https%3A%2F%2Fjoplin-plugin-downloads.vercel.app%2Fapi%3Fplugin%3Djoplin.plugin.alondmnt.history-panel)
+
 Discussion: https://discourse.joplinapp.org/t/plugin-the-history-panel/24705
 
 ## Features
