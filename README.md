@@ -30,5 +30,3 @@ The above setup enables some interesting use cases.
 - Sync and combine your history across devices.
 - Keep separate histories for work, different projects and so on, by maintaining multiple history notes and switching between them during app use.
 - [Backlinks / referrers](https://github.com/ylc395/joplin-plugin-note-link-system) will point back to all the visits of the currently viewed note that are documented in any of the history logs.
-
-A tutorial on additional Joplin plugins for knowledge management: https://alondmnt.com/notes
