@@ -49,7 +49,7 @@ export default async function addHistItem(params: HistSettings) {
     if (DEBUG) console.log('addHistItem: failed when histNoteId = ' + params.histNoteId);
     return
   }
-  let history = histNote.body.split('\n');
+  let history = histNote.body.split('\n').map(line => line.trim());
 
   // tidy up history
   const item: HistItem = {
@@ -68,7 +68,7 @@ export default async function addHistItem(params: HistSettings) {
         params.secBetweenItems, params.trailFormat);
 
   if (params.detectBacktrack && isBacktrack(history, item, params)) {
-    await joplin.data.put(['notes', histNote.id], null, { body: history.join('\n') });  // edited by cleanNewHist
+    await joplin.data.put(['notes', histNote.id], null, { body: history.join('  \n') });  // edited by cleanNewHist
     return
   }  // when backtracking only update the panel
 
@@ -79,7 +79,7 @@ export default async function addHistItem(params: HistSettings) {
     history = cleanOldHist(history, item.date, params.maxDays);
 
   if (isDuplicate(history[0], item)) {  // do not duplicate the last item
-    await joplin.data.put(['notes', histNote.id], null, { body: history.join('\n') });
+    await joplin.data.put(['notes', histNote.id], null, { body: history.join('  \n') });
     return
   }
 
@@ -97,7 +97,7 @@ export default async function addHistItem(params: HistSettings) {
   if (DEBUG)
     console.log('addHistItem: ' + (finish.getTime() - item.date.getTime()) + 'ms');
 
-  await joplin.data.put(['notes', histNote.id], null, { body: history.join('\n') });
+  await joplin.data.put(['notes', histNote.id], null, { body: history.join('  \n') });
 }
 
 /**
