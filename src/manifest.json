@@ -2,11 +2,13 @@
 	"manifest_version": 1,
 	"id": "joplin.plugin.alondmnt.history-panel",
 	"app_min_version": "2.6",
-	"version": "1.0.2",
+	"platforms": ["desktop", "mobile"],
+	"version": "1.0.3",
 	"name": "History Panel",
 	"description": "Joplin note browsing history",
 	"author": "Alon Diament",
 	"homepage_url": "https://github.com/alondmnt/joplin-plugin-history-panel#readme",
 	"repository_url": "https://github.com/alondmnt/joplin-plugin-history-panel",
+	"categories": ["search"],
 	"keywords": []
 }
